@@ -92,8 +92,28 @@ export async function getJournalEntries(): Promise<JournalEntry[]> {
 
 export async function requestCall(phone: string): Promise<{ success: boolean }> {
   try {
-    // In a real app, you'd call your API here
-    // Mocking successful response
+
+    // Prepare the request to the server
+    const futureDate = new Date(Date.now() + 30000); // 30 seconds in the future
+    const formattedDate = futureDate.toISOString().split('.')[0] + 'Z'; // Remove milliseconds and ensure Z suffix
+
+    const response = await fetch('https://daily-dev-server.onrender.com/reminders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        phone_number: phone,
+        date: formattedDate,
+        method: "call"
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to submit phone number');
+    }
+
     return { success: true };
   } catch (error) {
     console.error('Error requesting call:', error);

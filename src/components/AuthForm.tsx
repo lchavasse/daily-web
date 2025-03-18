@@ -396,6 +396,7 @@ const AuthForm: React.FC = () => {
           </form>
         );
         
+        
       default: // AuthStep.INITIAL
         return (
           <div className="space-y-4">

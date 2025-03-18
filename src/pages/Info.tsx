@@ -5,7 +5,7 @@ import NavigationMenu from '@/components/NavigationMenu';
 
 const Info: React.FC = () => {
   return (
-    <div className="min-h-screen p-6 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
       <div className="max-w-md mx-auto pt-8 pb-16">
         <div className="mb-10">
           <Logo />

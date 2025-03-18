@@ -22,15 +22,10 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen p-6 relative">
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
       <div className="max-w-2xl mx-auto pt-8 pb-16">
         <div className="mb-10">
           <Logo />
-        </div>
-
-        <div className="daily-card bg-brown-300 mb-6 shadow-md text-white">
-          <h2 className="text-lg font-medium mb-2">Hello, {user.email.split('@')[0]}</h2>
-          <p className="text-white/90 text-sm">How can I help you today?</p>
         </div>
 
         <UserDashboard />

@@ -32,7 +32,9 @@ const Index: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
       <div className="w-full mx-auto pt-8 pb-16">
         <div className="mb-10">
-          <Logo />
+          <div className="flex justify-center">
+            <Logo />
+          </div>
           <div className="text-center pt-8">
           <h1 className="text-4xl mb-2 text-gray-900 h-12 font-['Afacad']">
             {displayText}
@@ -45,7 +47,7 @@ const Index: React.FC = () => {
         {!user ? (
           <PhoneForm />
         ) : account === 'open' ? (
-          <Navigate to="/openpage" />
+          <Navigate to="/welcome" />
         ) : account === 'closed' ? (
           <Navigate to="/dashboard" />
         ) : (

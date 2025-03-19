@@ -50,11 +50,14 @@ const DetailsForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
     setProcessing(true);
     try {
       await signupWithGoogle();
+
       
       // If Google signup was successful and we have the email, proceed with the subscription
       if (user?.email) {
         // Get user's name from email if not available
         const nameToUse = watch('name') || user.email.split('@')[0];
+        console.log('Email:', user.email);
+        console.log('Name to use:', nameToUse);
         
         // Create subscription with Google info
         const result = await createSubscription(nameToUse, user.email);
@@ -83,6 +86,9 @@ const DetailsForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
         // Also update user profile
         await updateUserProfile(data.name, data.email);
       }
+
+      user.name = data.name; // Update user name in local context
+
     } catch (error) {
       console.error('Error during sign up:', error);
       toast.error('Failed to process your information');
@@ -103,14 +109,15 @@ const DetailsForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
       )}
       
       <CardHeader>
-        <CardTitle>Subscribe to Daily</CardTitle>
+        <CardTitle>Subscribe to daily.</CardTitle>
         <CardDescription>
-          Get unlimited access to Daily with our monthly subscription.
+          Get unlimited access to daily. with our monthly subscription.
         </CardDescription>
       </CardHeader>
       
       <CardContent className="space-y-4 pt-4">
-        {/* Google OAuth Button */}
+
+        {/* Google OAuth Button 
         <div className="mb-4">
           <Button 
             type="button" 
@@ -148,14 +155,17 @@ const DetailsForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
         <Separator>
           <span className="px-2 text-xs text-muted-foreground">or</span>
         </Separator>
+
+        */}
         
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="space-y-4 mt-4">
+          <div className="space-y-4 mt-0">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
               <Input 
                 id="name" 
-                placeholder="John Doe"
+                placeholder="name"
+                className="daily-input"
                 {...register('name')} 
               />
               {errors.name && (
@@ -167,8 +177,9 @@ const DetailsForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
               <Label htmlFor="email">Email</Label>
               <Input 
                 id="email" 
-                placeholder="john@example.com"
+                placeholder="email"
                 type="email"
+                className="daily-input"
                 {...register('email')} 
               />
               {errors.email && (
@@ -179,6 +190,9 @@ const DetailsForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
             <Button 
               type="submit" 
               className="w-full" 
+              style={{ backgroundColor: '#FFA9CC', color: '#502220' }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#E880AA'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#FFA9CC'}
               disabled={isLoading}
             >
               {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
@@ -223,7 +237,7 @@ const SignUpForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) => 
       <CardHeader>
         <CardTitle>Subscribe to Daily</CardTitle>
         <CardDescription className="flex justify-between items-center">
-          <span>Complete your payment to subscribe to Daily.</span>
+          <span>Complete your payment to subscribe to daily.</span>
           {/*
           <Button
             variant="ghost"

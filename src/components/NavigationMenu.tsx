@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { User, Menu, X, HelpCircle, LogOut } from 'lucide-react';
+import { User, Menu, X, HelpCircle, LogOut, CreditCard } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -47,6 +47,14 @@ const NavigationMenu: React.FC = () => {
                 >
                   {user ? 'Dashboard' : 'Sign In'}
                 </button>
+                {user && (
+                  <button 
+                    onClick={() => navigateTo('/settings')}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                  >
+                    Settings
+                  </button>
+                )}
                 <button 
                   onClick={() => navigateTo('/info')}
                   className="w-full text-left px-4 py-2 hover:bg-gray-100"
@@ -71,19 +79,6 @@ const NavigationMenu: React.FC = () => {
             </div>
           )}
         </div>
-        
-        {/* Logout button for testing (mobile) */}
-        {user && (
-          <div className="fixed bottom-4 left-4 z-50">
-            <button 
-              onClick={handleLogout}
-              className="bg-white/80 backdrop-blur-sm rounded-full p-3 shadow-md text-red-500"
-              title="Logout (Testing)"
-            >
-              <LogOut size={20} />
-            </button>
-          </div>
-        )}
       </>
     );
   }
@@ -99,6 +94,14 @@ const NavigationMenu: React.FC = () => {
           >
             <User size={18} />
           </button>
+          {user && (
+            <button 
+              onClick={() => navigateTo('/settings')}
+              className={isActive('/settings') ? 'nav-item-active' : 'nav-item'}
+            >
+              <CreditCard size={18} />
+            </button>
+          )}
           <button 
             onClick={() => navigateTo('/info')}
             className={isActive('/info') ? 'nav-item-active' : 'nav-item'}

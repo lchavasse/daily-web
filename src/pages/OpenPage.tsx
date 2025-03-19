@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import Logo from '@/components/Logo';
 import NavigationMenu from '@/components/NavigationMenu';
@@ -11,6 +11,53 @@ import { usePayment } from '@/contexts/PaymentContext';
 const OpenPage: React.FC = () => {
   const { user, account, isLoading } = useAuth();
   const { subscriptionStatus } = usePayment();
+  const [logoAnimationComplete, setLogoAnimationComplete] = useState(false);
+  const [showLandingPage, setShowLandingPage] = useState(false);
+  const [logoPosition, setLogoPosition] = useState('center');
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect if the device is mobile based on screen width
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // Check initially
+    checkIfMobile();
+    
+    // Add event listener for window resize
+    window.addEventListener('resize', checkIfMobile);
+    
+    // Clean up
+    return () => window.removeEventListener('resize', checkIfMobile);
+  }, []);
+
+  // Animation sequence
+  useEffect(() => {
+    // Step 1: Logo animation appears centered
+    const logoTimer = setTimeout(() => {
+      // Step 2: Begin shifting logo position
+      setTimeout(() => {
+        // Only shift logo left on desktop
+        if (!isMobile) {
+          setLogoPosition('left');
+        }
+        
+        // Step 3: After logo animation, show the call request
+        setTimeout(() => {
+          setLogoAnimationComplete(true);
+          
+          // Step 4: After logo is visible and call request is typing, prepare for landing page
+          setTimeout(() => {
+            setShowLandingPage(true);
+          }, 1000); // Delay before showing landing page content
+        }, 300);
+      }, 400);
+      
+    }, 600); // Delay before starting the sequence
+    
+    return () => clearTimeout(logoTimer);
+  }, [isMobile]);
 
   if (isLoading) {
     return (
@@ -32,21 +79,82 @@ const OpenPage: React.FC = () => {
   */
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      <div className="w-full mx-auto pt-8 pb-16">
-        <div className="mb-10">
-          <Logo />
-        </div>
-        <div className="flex justify-center mb-6">
-          <RequestCall />
-        </div>
-
-        <LandingPage />
+    <div className="min-h-screen flex flex-col overflow-y-auto bg-[#FFF2F1]">
+      <div className="w-full max-w-2xl mx-auto pt-8 px-6 pb-6">
+        {/* Animated header section - Different layouts for mobile and desktop */}
+        {isMobile ? (
+          // Mobile layout - Logo stacked above call request
+          <div className="mb-6 flex flex-col items-center space-y-4">
+            {/* Logo centered at the top */}
+            <div className="flex justify-center animate-scale-in">
+              <Logo />
+            </div>
+            
+            {/* Call request below logo */}
+            <div 
+              className={`transition-all duration-700 ease-in-out transform ${
+                logoAnimationComplete 
+                  ? 'opacity-100 translate-y-0' 
+                  : 'opacity-0 translate-y-4'
+              }`}
+            >
+              {logoAnimationComplete && <RequestCall />}
+            </div>
+          </div>
+        ) : (
+          // Desktop layout - Logo and call request side by side
+          <div className="mb-6 flex justify-center">
+            <div className="flex items-center justify-center" style={{ width: '350px', height: '70px', position: 'relative' }}>
+              {/* Logo container with smooth transition */}
+              <div 
+                className="transition-all duration-1000 ease-in-out absolute"
+                style={{ 
+                  left: logoPosition === 'center' ? '50%' : '0', 
+                  transform: logoPosition === 'center' ? 'translateX(-50%)' : 'translateX(0)'
+                }}
+              >
+                {/* Logo with scale in animation */}
+                <div className="animate-scale-in">
+                  <Logo />
+                </div>
+              </div>
+              
+              {/* Call request container */}
+              <div 
+                className={`absolute transition-all duration-700 ease-in-out transform ${
+                  logoAnimationComplete 
+                    ? 'opacity-100 translate-x-0' 
+                    : 'opacity-0 translate-x-8'
+                }`}
+                style={{ 
+                  left: '78px',
+                  transitionDelay: '200ms'
+                }}
+              >
+                {logoAnimationComplete && <RequestCall />}
+              </div>
+            </div>
+          </div>
+        )}
         
-        <SocialLinks />
+        {/* Main Content - Appears after header animations */}
+        <div 
+          className={`transition-opacity duration-700 ease-in-out ${
+            showLandingPage ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <LandingPage />
+          
+          <div className="mt-6 mb-6">
+            <SocialLinks />
+          </div>
+        </div>
       </div>
       
-      <NavigationMenu />
+      {/* Fixed navigation at bottom */}
+      <div className="fixed bottom-5 left-0 right-5 z-10">
+        <NavigationMenu />
+      </div>
     </div>
   );
 };

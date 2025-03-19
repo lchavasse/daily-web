@@ -21,10 +21,10 @@ const UserDashboard: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-6 animate-fade-in">
+    <div className="w-full max-w-3xl mx-auto space-y-6 animate-fade-in">
       {/* Greeting and prompt */}
-      <div className="daily-card bg-brown-300 text-white">
-        <h2 className="text-md font-medium mb-4">Hi {user?.email?.split('@')[0] || 'there'}, how have you been..?</h2>
+      <div className="daily-card">
+        <h2 className="text-md font-medium mb-4">Hi {user?.phone || 'there'}, how have you been..?</h2>
         
         <form onSubmit={handleSubmitPrompt} className="flex items-center gap-2">
           <input
@@ -41,7 +41,7 @@ const UserDashboard: React.FC = () => {
       </div>
 
       {/* Tab navigation and content */}
-      <div className="daily-card bg-brown-300">
+      <div className="daily-card">
         <div className="flex rounded-lg overflow-hidden mb-6">
           <button
             onClick={() => setActiveView('tasks')}

@@ -28,7 +28,7 @@ const AuthCallback: React.FC = () => {
         if (data.session) {
           console.log('Session found, redirecting to dashboard');
           if (data.session.user.phone) {
-            navigate('/Dashboard');
+            navigate('/Openpage');
           } else {
             navigate('/');
           }

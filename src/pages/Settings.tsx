@@ -13,6 +13,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { LoaderCircle, CreditCard, ShieldAlert, Info, ArrowRightCircle } from 'lucide-react';
 
 const Settings = () => {
+  // Debug logging
+  console.log('Settings component rendering');
+  
   const { 
     isLoading, 
     subscriptionStatus, 
@@ -22,7 +25,18 @@ const Settings = () => {
     cancelSubscription 
   } = usePayment();
   
+  // Debug payment context values
+  console.log('Payment context values:', { 
+    isLoading, 
+    subscriptionStatus, 
+    subscriptionId, 
+    currentPeriodEnd 
+  });
+  
   const { user, logout } = useAuth();
+  // Debug auth context values
+  console.log('Auth context values:', { user });
+  
   const navigate = useNavigate();
   
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
@@ -30,6 +44,7 @@ const Settings = () => {
 
   // Refresh subscription status when component loads
   useEffect(() => {
+    console.log('Settings useEffect running - refreshing subscription');
     refreshSubscriptionStatus();
   }, [user, refreshSubscriptionStatus]);
 

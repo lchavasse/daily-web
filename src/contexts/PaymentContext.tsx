@@ -49,10 +49,27 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
 
       try {
-        const stripeInstance = await loadStripe(stripePublishableKey);
-        setStripe(stripeInstance);
+        console.log('Initializing Stripe on device:', 
+          window.innerWidth < 768 ? 'mobile' : 'desktop', 
+          'width:', window.innerWidth,
+          'using key:', stripePublishableKey.substring(0, 5) + '...' + stripePublishableKey.substring(stripePublishableKey.length - 4)
+        );
+        
+        // For mobile devices, add some extra options
+        const options = window.innerWidth < 768 ? {
+          locale: 'en' as const,
+        } : {};
+        
+        const stripeInstance = await loadStripe(stripePublishableKey, options);
+        
+        if (stripeInstance) {
+          console.log('✅ Stripe initialized successfully');
+          setStripe(stripeInstance);
+        } else {
+          console.error('❌ Stripe initialized but returned null instance');
+        }
       } catch (error) {
-        console.error('Error initializing Stripe:', error);
+        console.error('❌ Error initializing Stripe:', error);
       }
     };
 

@@ -14,6 +14,7 @@ console.log('Webhook Server URL:', webhookServerUrl);
 
 interface User {
   id: string;
+  name: string | null;
   email: string | null;
   phone: string | null;
 }
@@ -57,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('Mapping Supabase user:', supabaseUser);
     return {
       id: supabaseUser.id,
+      name: supabaseUser.user_metadata.name || null,
       email: supabaseUser.email,
       phone: supabaseUser.phone,
     };
@@ -136,6 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Profile check result:', data);
 
       let result = 'none';
+      let name = null;
       // return if no user
       if (data.error) {
         console.log('No profile found, returning "none"');
@@ -143,9 +146,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (data.account === 'open') {
         console.log('Open profile found');
         result = 'open';
+        if (data.name) {
+          name = data.name;
+        }
       } else if (data.account === 'closed') {
         console.log('Closed profile found');
         result = 'closed';
+        if (data.name) {
+          name = data.name;
+        }
+      }
+
+      if (name) { // if name is available, update the user - else this will happen during signup..?
+        user.name = name;
       }
 
       return result;
@@ -279,9 +292,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signupWithGoogle = async (): Promise<void> => {
-    // Placeholder implementation
-    console.log('Signing up with Google');
-    // Implementation would go here
+    console.log('Attempting to link Google account...');
+      
+    // Use the same redirect URL as in signupWithGoogle
+    const currentUrl = window.location.origin;
+    const redirectUrl = `${currentUrl}/auth/callback`;
+      
+    console.log('Using redirect URL:', redirectUrl);
+    const { data, error } = await supabase.auth.linkIdentity({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUrl
+      }
+    });
+
+    if (error) {
+      console.error('Google signup error:', error);
+    }
   };
 
   const addPhoneAfterGoogleSignup = async (phone: string): Promise<boolean> => {

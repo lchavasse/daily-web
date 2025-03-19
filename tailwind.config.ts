@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -64,7 +63,8 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				pink: {
-					'100': '#FFDEE2'
+					'100': '#FFDEE2',
+					'500': '#E86A8D'
 				},
 				peach: {
 					'100': '#FDE1D3'

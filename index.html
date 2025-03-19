@@ -6,6 +6,40 @@
     <title>daily.</title>
     <meta name="description" content="your accountability assistant" />
     <meta name="author" content="Nile Street Ltd" />
+    
+    <!-- Script for handling SPA routes on page reload -->
+    <script type="text/javascript">
+      // This script checks if we're being redirected from a 404 page with a path
+      (function() {
+        // Parse the URL
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        
+        // If we have a saved path and we're on the root with a query string
+        if (redirect && redirect !== location.href) {
+          // Save the referrer
+          history.replaceState(null, null, redirect);
+        }
+        
+        // Handle GitHub Pages SPA routing pattern: /?/route
+        var l = window.location;
+        if(l.search) {
+          var q = {};
+          l.search.slice(1).split('&').forEach(function(v) {
+            var a = v.split('=');
+            q[a[0]] = a.slice(1).join('=').replace(/~and~/g, '&');
+          });
+          if (q['/']) {
+            history.replaceState(
+              null, null,
+              l.pathname.slice(0, -1) + (q['/'] || '') +
+              (q['p'] ? ('?' + q['p']) : '') +
+              l.hash
+            );
+          }
+        }
+      })();
+    </script>
   </head>
 
   <body>

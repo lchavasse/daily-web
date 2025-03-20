@@ -1,15 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowRight, Phone } from 'lucide-react';
+
+import React, { useState } from 'react';
+import { ArrowRight } from 'lucide-react';
 import TasksView from './TasksView';
 import IdeasView from './IdeasView';
 import JournalView from './JournalView';
-import { useAuth } from '../contexts/AuthContext';
-import { 
-  fetchUserProfileForDashboard, 
-  fetchUserProjectsForDashboard,
-  fetchUserTasksForDashboard,
-  fetchUserRemindersForDashboard
-} from '../lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 type ViewType = 'tasks' | 'ideas' | 'journal';
 
@@ -17,8 +12,6 @@ const UserDashboard: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewType>('tasks');
   const [prompt, setPrompt] = useState('');
   const { user } = useAuth();
-  const userId = user?.id;
-  const [userProfile, setUserProfile] = useState(null);
 
   const handleSubmitPrompt = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,24 +20,28 @@ const UserDashboard: React.FC = () => {
     setPrompt('');
   };
 
-  useEffect(() => {
-    if (userId) {
-      const loadProfile = async () => {
-        const userData = await fetchUserProfileForDashboard(userId);
-        console.log('User data:', userData);
-        setUserProfile(userData);
-      };
-      
-      loadProfile();
-    }
-  }, [userId]);
-
   return (
-    <div className="w-full mx-auto space-y-6 animate-fade-in flex flex-col items-center zindex-10">
+    <div className="w-full max-w-3xl mx-auto space-y-6 animate-fade-in">
+      {/* Greeting and prompt */}
+      <div className="daily-card">
+        <h2 className="text-md font-medium mb-4">Hi {user?.name || 'there'}, how have you been..?</h2>
+        
+        <form onSubmit={handleSubmitPrompt} className="flex items-center gap-2">
+          <input
+            type="text"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            className="daily-input"
+            placeholder="have you remembered to plan that launch event?"
+          />
+          <button type="submit" className="daily-btn rounded-full p-2">
+            <ArrowRight size={18} />
+          </button>
+        </form>
+      </div>
 
       {/* Tab navigation and content */}
-      <div className="daily-card w-3/4 max-w-4xl">
-      <h2 className="text-md font-medium mb-4">Hi {user?.name || 'there'}, how have you been..?</h2>
+      <div className="daily-card">
         <div className="flex rounded-lg overflow-hidden mb-6">
           <button
             onClick={() => setActiveView('tasks')}
@@ -71,16 +68,10 @@ const UserDashboard: React.FC = () => {
             journal
           </button>
         </div>
-        <div className="relative bg-white rounded-lg p-4">
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
-            <span className="text-white text-xl">Coming Soon</span>
-          </div>
-        </div>
-        {/*
+
         {activeView === 'tasks' && <TasksView />}
         {activeView === 'ideas' && <IdeasView />}
         {activeView === 'journal' && <JournalView />}
-        */}
       </div>
     </div>
   );

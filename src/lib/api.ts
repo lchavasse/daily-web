@@ -21,6 +21,181 @@ export interface JournalEntry {
   content: string;
 }
 
+export interface UserProfile {
+  user_id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  start_q: string | null;
+  notes: string | null;
+}
+
+export interface Project {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  deadline: string | null;
+  user_id: string;
+  created_at: string;
+}
+
+export interface UserTask {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  deadline: string | null;
+  project_id: string | null;
+  user_id: string;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface Reminder {
+  id: string;
+  title: string;
+  description: string | null;
+  date_time: string;
+  is_recurring: boolean;
+  recurrence_pattern: string | null;
+  user_id: string;
+  created_at: string;
+}
+
+export async function getUserProfile(userId: string): Promise<{ success: boolean, data: UserProfile | null, error?: string }> {
+  const response = await fetch(`${BASE_URL}/dev/user/profile`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ userId }),
+  });
+
+  const data = await response.json();
+  return data;
+}
+
+export async function fetchUserProfileForDashboard(userId: string): Promise<UserProfile | null> {
+  try {
+    if (!userId) {
+      console.error('User ID is required to fetch profile');
+      return null;
+    }
+    
+    const response = await getUserProfile(userId);
+    if (response.success && response.data) {
+      return response.data;
+    } else {
+      console.error('Failed to fetch user profile:', response.error);
+      return null;
+    }
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    return null;
+  }
+}
+
+export async function getUserProjects(userId: string): Promise<{ success: boolean, data: Project[], error?: string }> {
+  const response = await fetch(`${BASE_URL}/dev/user/projects`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ userId }),
+  });
+
+  const data = await response.json();
+  return data;
+}
+
+export async function fetchUserProjectsForDashboard(userId: string): Promise<Project[]> {
+  try {
+    if (!userId) {
+      console.error('User ID is required to fetch projects');
+      return [];
+    }
+    
+    const response = await getUserProjects(userId);
+    if (response.success && response.data) {
+      return response.data;
+    } else {
+      console.error('Failed to fetch user projects:', response.error);
+      return [];
+    }
+  } catch (error) {
+    console.error('Error fetching user projects:', error);
+    return [];
+  }
+}
+
+export async function getUserTasks(userId: string): Promise<{ success: boolean, data: UserTask[], error?: string }> {
+  const response = await fetch(`${BASE_URL}/dev/user/tasks`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ userId }),
+  });
+
+  const data = await response.json();
+  return data;
+}
+
+export async function fetchUserTasksForDashboard(userId: string): Promise<UserTask[]> {
+  try {
+    if (!userId) {
+      console.error('User ID is required to fetch tasks');
+      return [];
+    }
+    
+    const response = await getUserTasks(userId);
+    if (response.success && response.data) {
+      return response.data;
+    } else {
+      console.error('Failed to fetch user tasks:', response.error);
+      return [];
+    }
+  } catch (error) {
+    console.error('Error fetching user tasks:', error);
+    return [];
+  }
+}
+
+export async function getUserReminders(userId: string): Promise<{ success: boolean, data: Reminder[], error?: string }> {
+  const response = await fetch(`${BASE_URL}/dev/user/reminders`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ userId }),
+  });
+
+  const data = await response.json();
+  return data;
+}
+
+export async function fetchUserRemindersForDashboard(userId: string): Promise<Reminder[]> {
+  try {
+    if (!userId) {
+      console.error('User ID is required to fetch reminders');
+      return [];
+    }
+    
+    const response = await getUserReminders(userId);
+    if (response.success && response.data) {
+      return response.data;
+    } else {
+      console.error('Failed to fetch user reminders:', response.error);
+      return [];
+    }
+  } catch (error) {
+    console.error('Error fetching user reminders:', error);
+    return [];
+  }
+}
+
 export async function getTasks(): Promise<Task[]> {
   // Mock implementation for now
   return [

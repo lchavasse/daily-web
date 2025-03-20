@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { ArrowRight, ChevronDown, Loader2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, ChevronDown, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 // Country codes data
@@ -171,6 +171,14 @@ const PhoneForm: React.FC = () => {
         <h2 className="text-sm font-medium mb-4">daily. works with your phone - please verify to reduce spam</h2>
         <form onSubmit={handleOtpSubmit}>
           <div className="flex items-center gap-2">
+          <button 
+            type="button" 
+            onClick={handleRestart}
+            className="text-gray-600 hover:text-gray-800 flex items-center gap-1 text-sm"
+            disabled={isLoading}
+          >
+            <ArrowLeft size={16} />
+          </button>
             <div className="flex-1">
               <input
                 type="text"

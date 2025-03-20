@@ -102,38 +102,23 @@ const OpenPage: React.FC = () => {
             </div>
           </div>
         ) : (
-          // Desktop layout - Logo and call request side by side
+          // Desktop layout with integrated logo and call request
           <div className="mb-6 flex justify-center">
-            <div className="flex items-center justify-center" style={{ width: '350px', height: '70px', position: 'relative' }}>
-              {/* Logo container with smooth transition */}
-              <div 
-                className="transition-all duration-1000 ease-in-out absolute"
-                style={{ 
-                  left: logoPosition === 'center' ? '50%' : '0', 
-                  transform: logoPosition === 'center' ? 'translateX(-50%)' : 'translateX(0)'
-                }}
-              >
-                {/* Logo with scale in animation */}
-                <div className="animate-scale-in">
-                  <Logo />
-                </div>
-              </div>
-              
-              {/* Call request container */}
-              <div 
-                className={`absolute transition-all duration-700 ease-in-out transform ${
-                  logoAnimationComplete 
-                    ? 'opacity-100 translate-x-0' 
-                    : 'opacity-0 translate-x-8'
-                }`}
-                style={{ 
-                  left: '78px',
-                  transitionDelay: '200ms'
-                }}
-              >
-                {logoAnimationComplete && <RequestCall />}
-              </div>
-            </div>
+            {logoPosition === 'center' && !logoAnimationComplete ? (
+              // Initial state: logo centered
+              <RequestCall 
+                showLogo={true} 
+                logoPosition="center" 
+                isAnimationComplete={logoAnimationComplete}
+              />
+            ) : (
+              // After animation: logo and call request side by side
+              <RequestCall 
+                showLogo={true} 
+                logoPosition="left" 
+                isAnimationComplete={logoAnimationComplete}
+              />
+            )}
           </div>
         )}
         

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Phone, ChevronDown, ChevronUp } from 'lucide-react';
+import { Phone, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { requestCall } from '@/lib/api';
 import { toast } from 'sonner';
@@ -42,12 +42,11 @@ const LandingPage: React.FC = () => {
     setIsExpanded(newExpandedState);
     
     // Auto-scroll when expanded - only for desktop
-    if (newExpandedState && !isMobile) {
+    if (!isMobile && newExpandedState) {
       // First wait for the state to update and animation to start
       setTimeout(() => {
-        // Use a large scroll value to ensure we get to all the content
         window.scrollBy({
-          top: 500, // Scroll down significantly
+          top: 500,
           behavior: 'smooth'
         });
       }, 400);
@@ -63,7 +62,7 @@ const LandingPage: React.FC = () => {
   };
 
   useEffect(() => {
-    // Remove auto-scroll on mobile entirely
+    // Remove auto-scroll entirely for mobile
     if (!isMobile && isExpanded) {
       setTimeout(() => {
         window.scrollBy({
@@ -100,34 +99,50 @@ const LandingPage: React.FC = () => {
         {/* Info content */}
         <div className="daily-card-contrast mx-0 mt-1 border-t border-gray-400/20">
           {/* Features section */}
-          <div className="space-y-4 pb-1">
-            <h2 className="text-2xl font-semibold font-['Afacad']">Register an account for:</h2>
+          <div 
+            className={`space-y-4 pb-1 ${isMobile ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
+            onClick={() => isMobile && setIsSignUp(true)}
+          >
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-semibold font-['Afacad']">Register an account for:</h2>
+              {isMobile && (
+                <ChevronRight size={24} className="text-daily-button" />
+              )}
+            </div>
             <ul className="space-y-2 text-lg">
-              <li className="flex items-center gap-2">
-                <span className="text-daily-button">•</span>
-                unlimited calls & reminders
+              <li className="flex items-start gap-2">
+                <span className="text-daily-button mt-1.5">•</span>
+                <div>
+                  <strong>Unlimited</strong> calls & reminders
+                </div>
               </li>
-              <li className="flex items-center gap-2">
-                <span className="text-daily-button">•</span>
-                secured data with sms authentication on every call
+              <li className="flex items-start gap-2">
+                <span className="text-daily-button mt-1.5">•</span>
+                <div>
+                  secured data with sms authentication on every call
+                </div>
               </li>
-              <li className="flex items-center gap-2">
-                <span className="text-daily-button">•</span>
-                a web dashboard to track goals & win
+              <li className="flex items-start gap-2">
+                <span className="text-daily-button mt-1.5">•</span>
+                <div>
+                  <div><strong>Launching 01.04.2025</strong></div>
+                  <div>a web dashboard to track goals</div>
+                </div>
               </li>
             </ul>
 
             {/* Pricing section */}
-            <div className="relative pt-4">
+            <div className="relative pt-2">
               <div className="space-y-2">
-                <p className="text-lg text-gray-700">
+                <p className="text-md italic text-gray-700">
                   For less than a fancy coffee a week, gain a decision partner that never sleeps, never judges, and always has your back.
                 </p>
-                <p className="text-lg font-semibold">Be an early adopter - £5/month</p>
+                <p className="text-lg font-semibold">Be an early adopter - £5/month - 7 day free trial</p>
                 <p className="text-sm text-gray-500 italic">
                   (cancel anytime - price guaranteed for the next 6 months)
                 </p>
               </div>
+              {!isMobile && (
               <button 
                 onClick={() => setIsSignUp(true)}
                 className={`absolute right-0 bg-daily-button text-white hover:bg-opacity-90 transition-all duration-300 rounded-full ${
@@ -150,6 +165,7 @@ const LandingPage: React.FC = () => {
                   <path d="M6 17l5-5-5-5"/>
                 </svg>
               </button>
+              )}
             </div>
           </div>
         </div>
@@ -180,14 +196,14 @@ const LandingPage: React.FC = () => {
           {/* Title and tagline - Different styles for mobile vs desktop */}
           {isMobile ? (
             // Mobile version - Title with consistent size over two lines
-            <div className="flex flex-col m-2 mt-4 mb-2">
-              <div className="flex flex-col mb-4">
-                <h1 className="text-3xl font-bold leading-tight">Drowning in</h1>
-                <h1 className="text-3xl font-bold leading-tight">to-dos & decisions</h1>
+            <div className="flex flex-col m-2 mt-6 mb-4">
+              <div className="flex flex-col mb-6">
+                <h1 className="text-4xl font-bold leading-tight">Drowning in</h1>
+                <h1 className="text-4xl font-bold leading-tight">to-dos & decisions</h1>
               </div>
 
               {/* Tagline below the title on mobile */}
-              <div className="mt-0 text-lg">
+              <div className="mt-2 text-xl">
                 <p className="leading-tight italic">daily. is your 24/7 <span className="font-bold">coach</span> to keep</p>
                 <p className="leading-tight italic">you accountable and on track.</p>
               </div>

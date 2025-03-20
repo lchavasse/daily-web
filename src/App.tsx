@@ -14,6 +14,7 @@ import TestPage from "./pages/TestPage";
 import AuthCallback from "./pages/AuthCallback";
 import OpenPage from "./pages/OpenPage";
 import Settings from "./pages/Settings";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/welcome" element={<OpenPage />} />
               <Route path="/test" element={<TestPage />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -44,9 +44,26 @@
   }
 
   body {
-    @apply bg-gradient-to-br from-pink-100 via-peach-100 to-purple-100 text-foreground font-sans antialiased min-h-screen;
+    @apply bg-gradient-to-br from-pink-100 via-peach-100 to-purple-100 text-foreground font-sans antialiased min-h-screen relative;
     font-family: 'Inter', sans-serif;
     overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.3); /* White with 30% opacity - does this help?*/
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  body > * {
+    position: relative;
+    z-index: 2;
   }
 
   h1 {
@@ -88,7 +105,8 @@
   }
 
   .social-circle {
-    @apply bg-white/70 rounded-full p-3 flex items-center justify-center shadow-sm transition-all duration-300 hover:bg-white hover:shadow-md;
+    background-color: #EEDCD0;
+    @apply rounded-full p-3 flex items-center justify-center shadow-sm transition-all duration-300 hover:bg-[#EEDCD0]/60 hover:shadow-md;
   }
   
   .nav-pill {

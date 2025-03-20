@@ -30,32 +30,36 @@ const Index: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
-      <div className="w-full mx-auto pt-8 pb-16">
+      <div className="w-full mx-auto pt-8 pb-16 relative">
         <div className="mb-10">
           <div className="flex justify-center">
             <Logo />
           </div>
           <div className="text-center pt-8">
-          <h1 className="text-4xl mb-2 text-gray-900 h-12 font-['Afacad']">
-            {displayText}
-          </h1>
-          <p className="text-gray-600 mb-4 text-xl font-['Afacad']" style={{ fontStyle: 'italic' }}>
-            your accountability assistant.
-          </p>
-        </div>
-        </div>
-        {!user ? (
-          <PhoneForm />
-        ) : account === 'open' ? (
-          <Navigate to="/welcome" />
-        ) : account === 'closed' ? (
-          <Navigate to="/dashboard" />
-        ) : (
-          <div>
-            <h1>Loading...</h1>
+            <h1 className="text-4xl mb-2 text-gray-900 h-12 font-['Afacad']">
+              {displayText}
+            </h1>
+            <p className="text-gray-600 mb-4 text-xl font-['Afacad']" style={{ fontStyle: 'italic' }}>
+              your accountability assistant.
+            </p>
           </div>
-        )}
-        <SocialLinks />
+        </div>
+        <div className="relative z-10">
+          {!user ? (
+            <PhoneForm />
+          ) : account === 'open' ? (
+            <Navigate to="/welcome" />
+          ) : account === 'closed' ? (
+            <Navigate to="/dashboard" />
+          ) : (
+            <div>
+              <h1>Loading...</h1>
+            </div>
+          )}
+        </div>
+        <div className="relative z-0 mt-8">
+          <SocialLinks />
+        </div>
       </div>
 
       <NavigationMenu />

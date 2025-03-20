@@ -272,15 +272,13 @@ export async function requestCall(phone: string): Promise<{ success: boolean }> 
     const futureDate = new Date(Date.now() + 30000); // 30 seconds in the future
     const formattedDate = futureDate.toISOString().split('.')[0] + 'Z'; // Remove milliseconds and ensure Z suffix
 
-    const response = await fetch('https://daily-dev-server.onrender.com/reminders', {
+    const response = await fetch(`${BASE_URL}/call`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        phone_number: phone,
-        date: formattedDate,
-        method: "call"
+        phone_number: phone
       }),
     });
 

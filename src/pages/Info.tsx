@@ -2,7 +2,7 @@
 import React from 'react';
 import Logo from '@/components/Logo';
 import NavigationMenu from '@/components/NavigationMenu';
-
+import SocialLinks from '@/components/SocialLinks';
 const Info: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
@@ -12,7 +12,11 @@ const Info: React.FC = () => {
         </div>
 
         <div className="daily-card animate-fade-in">
-          <h2 className="text-xl font-medium mb-4">How Daily Works</h2>
+          <p className="italic text-sm">
+            daily. is constantly evolving. We apolgise for any bugs at this stage. We would be most grateful if you could contact us if you experience any issues.
+          </p>
+
+          <h2 className="text-xl font-medium mb-4 mt-4">How <strong>daily.</strong> Works</h2>
           
           <div className="space-y-6 text-sm">
             <div>
@@ -25,25 +29,16 @@ const Info: React.FC = () => {
             <div>
               <h3 className="font-medium mb-2">Voice Assistant</h3>
               <p className="text-gray-700">
-                Interact with Daily through natural conversation. Daily understands context and can help you manage tasks, capture ideas, and maintain your journal.
+                Interact with daily through natural conversation. daily understands context and can help you manage tasks, capture ideas, and maintain a record of your decisions and progress.
+                <br />
+                <br />
+                <p className="italic">Lead the conversation. daily is only as good as the information you share.</p>
               </p>
             </div>
             
-            <div>
-              <h3 className="font-medium mb-2">24/7 Availability</h3>
-              <p className="text-gray-700">
-                Daily is always available to help you, whether through the web app or by phone. Get assistance whenever you need it.
-              </p>
-            </div>
-            
-            <div>
-              <h3 className="font-medium mb-2">Personalized Experience</h3>
-              <p className="text-gray-700">
-                Daily learns your preferences and habits to provide a more tailored experience that fits your workflow.
-              </p>
-            </div>
           </div>
         </div>
+        <SocialLinks />
       </div>
 
       <NavigationMenu />

@@ -36,7 +36,7 @@ interface RegionPhone {
 }
 
 const RequestCall: React.FC<RequestCallProps> = ({ 
-  text = 'Should we call now?', 
+  text = 'call daily. now?', 
   showLogo = false,
   logoPosition = 'left',
   isAnimationComplete = true
@@ -86,6 +86,14 @@ const RequestCall: React.FC<RequestCallProps> = ({
 
     const toggleMenu = (e: React.MouseEvent) => {
         e.preventDefault();
+        if (!isMenuExpanded && buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect();
+            setMenuPosition({
+                top: rect.bottom + window.scrollY,
+                left: rect.left + rect.width / 2 + window.scrollX,
+                width: Math.max(272, rect.width)
+            });
+        }
         setIsMenuExpanded(!isMenuExpanded);
     };
 
@@ -110,7 +118,7 @@ const RequestCall: React.FC<RequestCallProps> = ({
             setMenuPosition({
                 top: rect.bottom + window.scrollY,
                 left: rect.left + rect.width / 2 + window.scrollX,
-                width: Math.max(272, rect.width) // 272px is our menu width (w-72 = 18rem = 288px)
+                width: Math.max(272, rect.width)
             });
         }
     }, [isMenuExpanded]);
@@ -243,7 +251,7 @@ const RequestCall: React.FC<RequestCallProps> = ({
                 {/* Call Me Now Button */}
                 <button
                   className="w-full py-3 px-4 mb-4 rounded-lg flex items-center justify-center font-medium text-white transition-all"
-                  style={{ backgroundColor: '#C4916A' }}
+                  style={{ backgroundColor: '#502220' }}
                   onClick={handleRequestCall}
                   disabled={isLoading}
                 >
@@ -257,7 +265,7 @@ const RequestCall: React.FC<RequestCallProps> = ({
                     <div className="w-full border-t border-gray-200"></div>
                   </div>
                   <div className="relative flex justify-center">
-                    <span className="px-2 bg-white text-sm text-gray-500">Or call us directly</span>
+                    <span className="px-2 bg-white text-sm text-gray-500">Or call daily. directly</span>
                   </div>
                 </div>
                 

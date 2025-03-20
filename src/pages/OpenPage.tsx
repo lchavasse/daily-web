@@ -79,7 +79,7 @@ const OpenPage: React.FC = () => {
   */
 
   return (
-    <div className="min-h-screen flex flex-col overflow-y-auto bg-[#FFF2F1]">
+    <div className="min-h-screen flex flex-col justify-center overflow-y-auto">
       <div className="w-full max-w-2xl mx-auto pt-8 px-6 pb-6">
         {/* Animated header section - Different layouts for mobile and desktop */}
         {isMobile ? (

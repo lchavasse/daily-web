@@ -71,11 +71,9 @@ const UserDashboard: React.FC = () => {
             journal
           </button>
         </div>
-        <div className="relative bg-white rounded-lg p-4">
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
-            <span className="text-white text-xl">Coming Soon</span>
+          <div className="flex items-center justify-center daily-card-contrast rounded-lg">
+            <h2 className="text-xl">!!! Coming Soon !!!</h2>
           </div>
-        </div>
         {/*
         {activeView === 'tasks' && <TasksView />}
         {activeView === 'ideas' && <IdeasView />}

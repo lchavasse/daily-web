@@ -16,10 +16,19 @@ const OpenPage: React.FC = () => {
   const [logoPosition, setLogoPosition] = useState('center');
   const [isMobile, setIsMobile] = useState(false);
 
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Detect if the device is mobile based on screen width
   useEffect(() => {
     const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      const isMobileView = window.innerWidth < 768;
+      setIsMobile(isMobileView);
+      if (isMobileView) {
+        window.scrollTo(0, 0);
+      }
     };
     
     // Check initially

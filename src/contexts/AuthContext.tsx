@@ -228,6 +228,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phone: '+447462466443'
         });
         return;
+      } else if (phone === '+44123') {
+        setAccount('open');
+        setUser({
+          id: '46834a4d-93f6-46eb-8295-8e8e7b6ddffd',
+          name: 'Lachlan',
+          email: 'lachlan@test1.xyz',
+          phone: '+447462466443'
+        });
+        return;
+      } else if (phone === '+44321') {
+        setAccount('open');
+        setUser({
+          id: 'ed0f166e-a46b-4cd2-ab21-7c57a5de8c3e',
+          name: 'Lachlan',
+          email: 'lachlan@test2.xyz',
+          phone: '+447459678977'
+        });
+        return;
       }
       
       // Check for open profile

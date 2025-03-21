@@ -86,7 +86,7 @@ const RequestCall: React.FC<RequestCallProps> = ({
     try {
       const response = await requestCall(user.phone);
       if (response.success) {
-        toast.success('daily. will call you in 30s');
+        toast.success('daily. will call you now!');
         setIsMenuExpanded(false);
       } else {
         toast.error('Failed to request call');

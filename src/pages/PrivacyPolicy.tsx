@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Logo from '@/components/Logo';
-import NavigationMenu from '@/components/NavigationMenu';
 
 const PrivacyPolicy: React.FC = () => {
   const navigate = useNavigate();
@@ -13,7 +12,7 @@ const PrivacyPolicy: React.FC = () => {
         {/* Header with back button and logo */}
         <div className="relative flex items-center justify-center mb-12 lm">
           <button
-            onClick={() => navigate('/about')}
+            onClick={() => navigate('/')}
             className="absolute left-4 flex items-center text-gray-600 hover:text-gray-900 transition-colors"
           >
             <svg
@@ -29,7 +28,7 @@ const PrivacyPolicy: React.FC = () => {
                 d="M10 19l-7-7m0 0l7-7m-7 7h18"
               />
             </svg>
-            Back
+            Back to Home
           </button>
           
           <Logo />
@@ -48,33 +47,33 @@ const PrivacyPolicy: React.FC = () => {
 
           <h2 className="text-3xl font-semibold mt-10">1. Data We Collect</h2>
 
-          <h3 className="text-2xl font-medium mt-8">a) Personal Information</h3>
+          <h3 className="text-2xl font-semibold mt-8">a) Personal Information</h3>
           <ul className="list-disc pl-6 space-y-2">
             <li><strong>Email Address</strong>: Used for account authentication and communication related to your account. Securely stored and connected to your unique user ID.</li>
             <li><strong>Phone Number</strong>: Required to enable phone calls with the voice assistant. Associated with your user ID for authentication.</li>
             <li><strong>Name</strong>: May be collected for personalized service through the voice assistant.</li>
           </ul>
 
-          <h3 className="text-2xl font-medium mt-8">b) User Content</h3>
+          <h3 className="text-2xl font-semibold mt-8">b) User Content</h3>
           <ul className="list-disc pl-6 space-y-2">
             <li><strong>Journal Entries (App)</strong>: Your in-app journal entries are encrypted on your device using a unique key, ensuring they cannot be accessed without the device or key.</li>
             <li><strong>Profile Information</strong>: Your profile details, tasks, projects, and reminders are stored and encrypted using industry-standard security (AES-256).</li>
             <li><strong>Voice Assistant Interactions</strong>: Conversations with the AI voice assistant are processed but not permanently stored.</li>
           </ul>
 
-          <h3 className="text-2xl font-medium mt-8">c) Voice Data</h3>
+          <h3 className="text-2xl font-semibold mt-8">c) Voice Data</h3>
           <ul className="list-disc pl-6 space-y-2">
             <li><strong>Purpose</strong>: Voice data is sent to our partners (Deepgram, OpenAI, and/or others) for transcription and processing when you use the voice assistant or speech-to-text features.</li>
             <li><strong>Retention</strong>: Voice data is not stored or saved by us or our partners after processing, except as necessary for the immediate functioning of the service.</li>
           </ul>
 
-          <h3 className="text-2xl font-medium mt-8">d) Anonymous Usage Data</h3>
+          <h3 className="text-2xl font-semibold mt-8">d) Anonymous Usage Data</h3>
           <ul className="list-disc pl-6 space-y-2">
             <li><strong>Purpose</strong>: We collect anonymized data to improve app functionality and user experience, such as feature usage patterns and app performance metrics.</li>
             <li><strong>Retention</strong>: This data is not linked to your identity and is stored securely for analysis.</li>
           </ul>
 
-          <h3 className="text-2xl font-medium mt-8">e) Additional Data You Share</h3>
+          <h3 className="text-2xl font-semibold mt-8">e) Additional Data You Share</h3>
           <p className="text-lg leading-relaxed">
             If you contact us through email or other communication methods, we may collect and store the data you choose to share (e.g., feedback, support requests). This data will be used solely for addressing your inquiries and improving our services.
           </p>
@@ -136,7 +135,7 @@ const PrivacyPolicy: React.FC = () => {
             Email: <a href="mailto:daily@nile-street.com" className="text-daily-button hover:underline">daily@nile-street.com</a>
           </p>
 
-          <h3 className="text-2xl font-medium mt-8">8.1 Account Deletion</h3>
+          <h3 className="text-2xl font-semibold mt-8" id="account-deletion">8.1. Account Deletion</h3>
           <ul className="list-disc pl-6 space-y-2">
             <li>For app journal entries: Overwriting with a blank entry will remove it from our database.</li>
             <li>For complete account deletion: Please contact us to confirm deletion of your user profile, tasks, projects, reminders, and all associated data from the system.</li>
@@ -152,8 +151,6 @@ const PrivacyPolicy: React.FC = () => {
           </p>
         </div>
       </div>
-
-      <NavigationMenu />
     </div>
   );
 };

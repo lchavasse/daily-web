@@ -18,29 +18,36 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 const queryClient = new QueryClient();
 
+// Wrapper component for routes that require authentication
+const AuthenticatedRoutes = () => (
+  <AuthProvider>
+    <PaymentProvider>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/info" element={<Info />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/welcome" element={<OpenPage />} />
+        <Route path="/test" element={<TestPage />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </PaymentProvider>
+  </AuthProvider>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
-        <PaymentProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/info" element={<Info />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/welcome" element={<OpenPage />} />
-              <Route path="/test" element={<TestPage />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </PaymentProvider>
-      </AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/*" element={<AuthenticatedRoutes />} />
+        </Routes>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -1,9 +1,20 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from '@/components/Logo';
 
 const PrivacyPolicy: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Handle hash navigation
+  useEffect(() => {
+    if (location.hash) {
+      const element = document.querySelector(location.hash);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, [location.hash]);
 
   return (
     <div className="min-h-screen p-6 relative">

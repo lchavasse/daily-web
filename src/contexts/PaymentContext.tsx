@@ -14,7 +14,8 @@ interface PaymentContextType {
   currentPeriodEnd: number | null;
   clientSecret: string | null;
   stripe: Stripe | null;
-  createSubscription: (name: string, email: string) => Promise<{ clientSecret: string } | null>;
+  createSubscription: (name: string, email: string) => Promise<{ clientSecret: string; isSetupIntent?: boolean } | null>;
+  createCheckoutSession: () => Promise<{ clientSecret: string }>;
   updateUserProfile: (name: string, email: string) => Promise<boolean>;
   refreshSubscriptionStatus: () => Promise<void>;
   clearPaymentState: () => void;
@@ -166,10 +167,67 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       return {
         clientSecret: data.clientSecret,
+        isSetupIntent: data.isSetupIntent || false,
       };
     } catch (error: any) {
       console.error('Error creating subscription:', error);
       toast.error(error.message || 'Failed to create subscription');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Create a checkout session
+  const createCheckoutSession = async () => {
+
+    setIsLoading(true);
+    try {
+      console.log('Making subscription API request with:', {
+        user_id: user.id,
+      });
+      
+      const response = await fetch(`${webhookServerUrl}/api/stripe/create-checkout-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: user?.name,
+          email: user?.email,
+          user_id: user.id,
+        }),
+      });
+
+      console.log('API response status:', response.status);
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        console.error('API error response:', data);
+        throw new Error(data.error || 'Failed to create subscription');
+      }
+
+      console.log('Received subscription data:', data);
+      
+      if (!data.clientSecret) {
+        console.error('No clientSecret received from API:', data);
+        throw new Error('No client secret received from server');
+      }
+      
+      // Set the client secret in the context state
+      setClientSecret(data.clientSecret);
+      
+      // Also log the Stripe publishable key to make sure it matches
+      console.log('Using publishable key:', stripePublishableKey);
+      
+      return {
+        clientSecret: data.clientSecret
+      };
+
+    } catch (error: any) {
+      console.error('Error creating checkout:', error);
+      toast.error(error.message || 'Failed to create checkout');
       return null;
     } finally {
       setIsLoading(false);
@@ -274,6 +332,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     clientSecret,
     stripe,
     createSubscription,
+    createCheckoutSession,
     updateUserProfile,
     refreshSubscriptionStatus,
     clearPaymentState,

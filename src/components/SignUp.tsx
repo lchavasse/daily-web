@@ -23,8 +23,80 @@ const formSchema = z.object({
   email: z.string().email('Please enter a valid email'),
 });
 
+// Wrapper component with Stripe Elements
+export const SignUp: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) => {
+  const { stripe, createSubscription } = usePayment();
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [isSetupIntent, setIsSetupIntent] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const initializePayment = async () => {
+      if (stripe && !clientSecret && !initialized) {
+        setInitialized(true);
+        try {
+          // Use createSubscription to get client secret
+          const result = await createSubscription(user?.name || '', user?.email || '');
+          if (result?.clientSecret) {
+            setClientSecret(result.clientSecret);
+            setIsSetupIntent(result.isSetupIntent || false);
+          }
+        } catch (error) {
+          console.error('Failed to initialize payment:', error);
+          toast.error('Failed to initialize payment');
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    initializePayment();
+  }, [stripe, clientSecret, initialized, createSubscription, user]);
+  
+  if (!stripe || isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <LoaderCircle className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!clientSecret) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center space-y-4">
+          <p className="text-red-500">Failed to initialize payment form</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <Elements stripe={stripe} options={{ 
+      clientSecret,
+      appearance: {
+        theme: 'stripe',
+        variables: {
+          colorPrimary: '#FFA9CC',
+          colorBackground: '#ffffff',
+          colorText: '#000000',
+          colorDanger: '#df1b41',
+          fontFamily: 'system-ui, sans-serif',
+          spacingUnit: '4px',
+          borderRadius: '8px',
+        },
+      }
+    }}>
+      <PaymentForm onBackClick={onBackClick} isSetupIntent={isSetupIntent} />
+    </Elements>
+  );
+};
+
 // Combined Payment Form Component
-const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) => {
+const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean }> = ({ onBackClick, isSetupIntent = false }) => {
   const stripe = useStripe();
   const elements = useElements();
   const { isLoading, createSubscription, updateUserProfile } = usePayment();
@@ -60,41 +132,72 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
         },
         requestPayerName: true,
         requestPayerEmail: true,
+        // Add support for both browser and native payment methods
+        requestShipping: false,
+        disableWallets: ['browserCard'], // Don't show duplicate card option
       });
 
       // Check if the Payment Request is available
       pr.canMakePayment().then(result => {
+        console.log('Payment Request availability:', result);
         if (result) {
+          // Log which payment methods are available
+          console.log('Available payment methods:', {
+            applePay: result.applePay,
+            googlePay: result.googlePay,
+            browserPaymentMethods: result.browserPaymentMethods,
+          });
           setPaymentRequest(pr);
+        } else {
+          console.log('No payment request methods available');
         }
       });
 
       // Handle payment method
       pr.on('paymentmethod', async (e) => {
+        console.log('Payment method received:', e.paymentMethod.type);
         setProcessing(true);
         try {
           // Create subscription with the payment method details
           const result = await createSubscription(e.payerName, e.payerEmail);
           
-          if (result) {
+          if (result?.clientSecret) {
             // Update user profile
             await updateUserProfile(e.payerName, e.payerEmail);
             
             // Confirm the payment
-            const { error } = await stripe.confirmPayment({
-              elements,
-              confirmParams: {
-                return_url: `${window.location.origin}/dashboard`,
-                payment_method: e.paymentMethod.id,
-              },
-            });
+            if (result.isSetupIntent) {
+              const { error } = await stripe.confirmSetup({
+                elements,
+                confirmParams: {
+                  return_url: `${window.location.origin}/dashboard`,
+                  payment_method: e.paymentMethod.id,
+                },
+              });
 
-            if (error) {
-              e.complete('fail');
-              toast.error(error.message);
+              if (error) {
+                e.complete('fail');
+                toast.error(error.message);
+              } else {
+                e.complete('success');
+                toast.success('Setup successful!');
+              }
             } else {
-              e.complete('success');
-              toast.success('Payment successful!');
+              const { error } = await stripe.confirmPayment({
+                elements,
+                confirmParams: {
+                  return_url: `${window.location.origin}/dashboard`,
+                  payment_method: e.paymentMethod.id,
+                },
+              });
+
+              if (error) {
+                e.complete('fail');
+                toast.error(error.message);
+              } else {
+                e.complete('success');
+                toast.success('Payment successful!');
+              }
             }
           } else {
             e.complete('fail');
@@ -117,18 +220,38 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
     
     setProcessing(true);
     try {
-      // First create the subscription
-      const result = await createSubscription(data.name, data.email);
+      // Update user profile first
+      await updateUserProfile(data.name, data.email);
       
-      if (result) {
-        // Update user profile
-        await updateUserProfile(data.name, data.email);
-        
-        // Then confirm the payment
+      // Confirm the payment or setup based on intent type
+      if (isSetupIntent) {
+        const { error } = await stripe.confirmSetup({
+          elements,
+          confirmParams: {
+            return_url: `${window.location.origin}/dashboard`,
+            payment_method_data: {
+              billing_details: {
+                name: data.name,
+                email: data.email,
+              }
+            }
+          },
+        });
+
+        if (error) {
+          toast.error(error.message);
+        }
+      } else {
         const { error } = await stripe.confirmPayment({
           elements,
           confirmParams: {
             return_url: `${window.location.origin}/dashboard`,
+            payment_method_data: {
+              billing_details: {
+                name: data.name,
+                email: data.email,
+              }
+            }
           },
         });
 
@@ -159,7 +282,9 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
       <CardHeader>
         <CardTitle>Subscribe to daily.</CardTitle>
         <CardDescription>
-          Get unlimited access to daily. with our monthly subscription.
+          {isSetupIntent 
+            ? "Set up your payment method for your 7-day free trial. You won't be charged until the trial ends."
+            : "Get unlimited access to daily. with our monthly subscription."}
         </CardDescription>
       </CardHeader>
       
@@ -172,9 +297,9 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
                 paymentRequest,
                 style: {
                   paymentRequestButton: {
-                    type: 'default',
-                    theme: 'dark',
-                    height: '44px',
+                    type: 'buy',
+                    theme: 'light',
+                    height: '48px',
                   },
                 },
               }}
@@ -229,31 +354,12 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
             >
               {(isLoading || processing) ? (
                 <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-              ) : 'Pay Now'}
+              ) : isSetupIntent ? 'Set Up Payment' : 'Pay Now'}
             </Button>
           </div>
         </form>
       </CardContent>
     </Card>
-  );
-};
-
-// Wrapper component with Stripe Elements
-export const SignUp: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) => {
-  const { stripe, clientSecret } = usePayment();
-  
-  if (!stripe || !clientSecret) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <LoaderCircle className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-  
-  return (
-    <Elements stripe={stripe} options={{ clientSecret }}>
-      <PaymentForm onBackClick={onBackClick} />
-    </Elements>
   );
 };
 

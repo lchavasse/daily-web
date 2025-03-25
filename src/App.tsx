@@ -41,7 +41,7 @@ const MainRoutes = () => (
         <Route path="/welcome" element={<OpenPage />} />
         <Route path="/test" element={<TestPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         {/* Protected routes */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

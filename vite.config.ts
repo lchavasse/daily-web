@@ -20,4 +20,7 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    outDir: 'dist', // Should match Vercel’s expected output
+  },
 }));

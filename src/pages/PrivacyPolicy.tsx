@@ -6,13 +6,16 @@ const PrivacyPolicy: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Handle hash navigation
+  // Handle hash navigation with a small delay
   useEffect(() => {
     if (location.hash) {
-      const element = document.querySelector(location.hash);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
+      // Add a small delay to ensure content is loaded
+      setTimeout(() => {
+        const element = document.querySelector(location.hash);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
     }
   }, [location.hash]);
 

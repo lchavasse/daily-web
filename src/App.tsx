@@ -23,7 +23,6 @@ const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   
-  // If there's no user, redirect to the landing page
   if (!user) {
     return <Navigate to="/" replace />;
   }
@@ -61,7 +60,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Public route for privacy policy */}
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          {/* All other routes go through MainRoutes */}
           <Route path="/*" element={<MainRoutes />} />
         </Routes>
       </BrowserRouter>

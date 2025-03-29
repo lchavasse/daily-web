@@ -94,6 +94,27 @@
   .daily-card-contrast {
     background-color: #F8E1D0;
     @apply rounded-lg p-6 shadow-sm backdrop-blur-sm transition-all duration-300;
+    max-height: 90vh; /* Limit height on mobile */
+    overflow-y: auto; /* Enable scrolling */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
+
+  /* Stripe Elements container styles */
+  .StripeElement {
+    width: 100%;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  /* Fix for Stripe iframe scrolling issues */
+  iframe[name^='__privateStripeFrame'] {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  /* Fix for Stripe payment form containers */
+  form .space-y-4 {
+    overflow: visible;
   }
 
   .daily-btn {
@@ -169,6 +190,43 @@
     to {
       transform: scale(1);
       opacity: 1;
+    }
+  }
+
+  /* Additional payment form styles */
+  .payment-card {
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .payment-element-container {
+    position: relative;
+    z-index: 5;
+    width: 100%;
+    min-height: 200px;
+  }
+
+  /* Fix for mobile screens */
+  @media (max-width: 640px) {
+    .daily-card-contrast {
+      max-height: 80vh;
+      padding: 1rem;
+    }
+    
+    .payment-element-container {
+      min-height: 250px;
+    }
+    
+    /* Ensure Stripe iframe content is fully visible */
+    .__PrivateStripeElement iframe {
+      height: auto !important;
+      min-height: 250px;
+    }
+    
+    /* Fix for Stripe form overflow on small screens */
+    form .space-y-4 {
+      margin-bottom: 1rem;
     }
   }
 }

@@ -88,7 +88,25 @@ export const SignUp: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) 
           spacingUnit: '4px',
           borderRadius: '8px',
         },
-      }
+        rules: {
+          '.Input': {
+            borderWidth: '1px',
+          },
+          '.Tab': {
+            padding: '8px 16px'
+          },
+          '.TabIcon': {
+            marginRight: '8px'
+          }
+        }
+      },
+      loader: 'auto',
+      // Fonts are part of the appearance object in newer Stripe versions
+      fonts: [
+        {
+          cssSrc: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap',
+        },
+      ]
     }}>
       <PaymentForm onBackClick={onBackClick} isSetupIntent={isSetupIntent} />
     </Elements>
@@ -268,7 +286,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
   };
 
   return (
-    <Card className="w-full daily-card-contrast relative">
+    <Card className="w-full daily-card-contrast relative payment-card">
       {onBackClick && (
         <button 
           onClick={onBackClick}
@@ -288,10 +306,10 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 overflow-visible">
         {/* Apple Pay / Google Pay */}
         {paymentRequest && (
-          <div>
+          <div className="overflow-visible">
             <PaymentRequestButtonElement
               options={{
                 paymentRequest,
@@ -313,8 +331,8 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
         )}
 
         {/* Card Payment Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 overflow-visible">
+          <div className="space-y-4 overflow-visible">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
               <Input 
@@ -342,7 +360,16 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
               )}
             </div>
 
-            <PaymentElement />
+            <div className="payment-element-container overflow-visible">
+              <PaymentElement options={{
+                layout: {
+                  type: 'accordion',
+                  defaultCollapsed: false,
+                  radios: false,
+                  spacedAccordionItems: false
+                }
+              }} />
+            </div>
             
             <Button 
               type="submit" 

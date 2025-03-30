@@ -194,7 +194,6 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
         setProcessing(true);
         try {
           // Get user details from Express Checkout if available
-          // Use 'any' type for event since Stripe's TypeScript definitions may not fully match the actual API
           const userName = event.payerName || user?.name || '';
           const userEmail = event.payerEmail || user?.email || '';
           
@@ -203,33 +202,64 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
             await updateUserProfile(userName, userEmail);
           }
           
-          // Use the event object which contains payment method information
-          const { error } = await stripe.confirmPayment({
-            elements,
-            confirmParams: {
-              return_url: `${window.location.origin}/dashboard`,
-            },
-            redirect: 'if_required',
-          });
-          
-          if (error) {
-            console.error('Payment confirmation error:', error);
-            toast.error(error.message || 'Payment failed');
-            // Call complete if it exists (it should according to Stripe docs)
-            if (typeof event.complete === 'function') {
-              event.complete('fail');
+          // Check if this is a SetupIntent or PaymentIntent and call appropriate method
+          if (isSetupIntent) {
+            console.log('Using confirmSetup for trial subscription');
+            // For free trial, we use SetupIntent
+            const { error } = await stripe.confirmSetup({
+              elements,
+              confirmParams: {
+                return_url: `${window.location.origin}/dashboard`,
+              },
+              redirect: 'if_required',
+            });
+            
+            if (error) {
+              console.error('Setup confirmation error:', error);
+              toast.error(error.message || 'Setup failed');
+              // Call complete if it exists
+              if (typeof event.complete === 'function') {
+                event.complete('fail');
+              }
+            } else {
+              toast.success('Free trial setup successful!');
+              // Call complete if it exists
+              if (typeof event.complete === 'function') {
+                event.complete('success');
+              }
+              // Navigate to dashboard on success if not redirected
+              navigate('/dashboard');
             }
           } else {
-            toast.success('Payment successful!');
-            // Call complete if it exists
-            if (typeof event.complete === 'function') {
-              event.complete('success');
+            console.log('Using confirmPayment for regular subscription');
+            // For regular payment, we use PaymentIntent
+            const { error } = await stripe.confirmPayment({
+              elements,
+              confirmParams: {
+                return_url: `${window.location.origin}/dashboard`,
+              },
+              redirect: 'if_required',
+            });
+            
+            if (error) {
+              console.error('Payment confirmation error:', error);
+              toast.error(error.message || 'Payment failed');
+              // Call complete if it exists
+              if (typeof event.complete === 'function') {
+                event.complete('fail');
+              }
+            } else {
+              toast.success('Payment successful!');
+              // Call complete if it exists
+              if (typeof event.complete === 'function') {
+                event.complete('success');
+              }
+              // Navigate to dashboard on success if not redirected
+              navigate('/dashboard');
             }
-            // Navigate to dashboard on success if not redirected
-            navigate('/dashboard');
           }
         } catch (error) {
-          console.error('Error processing Express Checkout payment:', error);
+          console.error('Error processing Express Checkout:', error);
           toast.error('Payment failed. Please try again.');
           // Call complete if it exists
           if (typeof event.complete === 'function') {
@@ -248,7 +278,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
       console.error('Error creating Express Checkout Element:', error);
       setShowExpressCheckout(false);
     }
-  }, [stripe, elements, user, navigate, updateUserProfile]);
+  }, [stripe, elements, user, navigate, updateUserProfile, isSetupIntent]);
 
   // Handle form submission for card payments
   const onSubmit = async (data: z.infer<typeof formSchema>) => {

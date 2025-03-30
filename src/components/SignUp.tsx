@@ -123,6 +123,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
   const navigate = useNavigate();
   const [showExpressCheckout, setShowExpressCheckout] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const expressCheckoutRef = React.useRef<HTMLDivElement>(null);
   
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -152,6 +153,102 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
       });
     }
   }, [elements]);
+
+  // Mount Express Checkout Element imperatively
+  useEffect(() => {
+    if (!stripe || !elements || !expressCheckoutRef.current) return;
+
+    // Clean up any previous elements
+    expressCheckoutRef.current.innerHTML = '';
+
+    try {
+      // Create Express Checkout Element
+      const expressCheckoutElement = elements.create('expressCheckout', {
+        buttonType: {
+          applePay: 'buy',
+          googlePay: 'buy',
+          paypal: 'checkout',
+        },
+        business: {
+          name: 'daily.',
+        },
+        emailRequired: true
+      });
+
+      // Mount the element
+      expressCheckoutElement.mount(expressCheckoutRef.current);
+
+      // Add event listeners
+      expressCheckoutElement.on('ready', (event) => {
+        console.log('Express Checkout ready:', event);
+        // If no payment methods are available, hide the express checkout section
+        if (!event.availablePaymentMethods || 
+            Object.keys(event.availablePaymentMethods).length === 0) {
+          setShowExpressCheckout(false);
+        }
+      });
+
+      expressCheckoutElement.on('confirm', async (event: any) => {
+        if (!stripe || !elements) return;
+        
+        setProcessing(true);
+        try {
+          // Get user details from Express Checkout if available
+          // Use 'any' type for event since Stripe's TypeScript definitions may not fully match the actual API
+          const userName = event.payerName || user?.name || '';
+          const userEmail = event.payerEmail || user?.email || '';
+          
+          // Update user profile if we have the data
+          if (userName || userEmail) {
+            await updateUserProfile(userName, userEmail);
+          }
+          
+          // Use the event object which contains payment method information
+          const { error } = await stripe.confirmPayment({
+            elements,
+            confirmParams: {
+              return_url: `${window.location.origin}/dashboard`,
+            },
+            redirect: 'if_required',
+          });
+          
+          if (error) {
+            console.error('Payment confirmation error:', error);
+            toast.error(error.message || 'Payment failed');
+            // Call complete if it exists (it should according to Stripe docs)
+            if (typeof event.complete === 'function') {
+              event.complete('fail');
+            }
+          } else {
+            toast.success('Payment successful!');
+            // Call complete if it exists
+            if (typeof event.complete === 'function') {
+              event.complete('success');
+            }
+            // Navigate to dashboard on success if not redirected
+            navigate('/dashboard');
+          }
+        } catch (error) {
+          console.error('Error processing Express Checkout payment:', error);
+          toast.error('Payment failed. Please try again.');
+          // Call complete if it exists
+          if (typeof event.complete === 'function') {
+            event.complete('fail');
+          }
+        } finally {
+          setProcessing(false);
+        }
+      });
+
+      // Return cleanup function
+      return () => {
+        expressCheckoutElement.unmount();
+      };
+    } catch (error) {
+      console.error('Error creating Express Checkout Element:', error);
+      setShowExpressCheckout(false);
+    }
+  }, [stripe, elements, user, navigate, updateUserProfile]);
 
   // Handle form submission for card payments
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
@@ -206,40 +303,6 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
     }
   };
 
-  // Handle Express Checkout Element confirmation
-  const handleExpressCheckoutConfirm = async (event: any) => {
-    if (!stripe || !elements) return;
-    
-    setProcessing(true);
-    try {
-      // Get user details from Express Checkout if available
-      const userName = event.payerName || user?.name || '';
-      const userEmail = event.payerEmail || user?.email || '';
-      
-      // Update user profile if we have the data
-      if (userName || userEmail) {
-        await updateUserProfile(userName, userEmail);
-      }
-      
-      // Confirm the payment
-      const { error } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/dashboard`,
-        },
-      });
-      
-      if (error) {
-        toast.error(error.message);
-      }
-    } catch (error) {
-      console.error('Error processing Express Checkout payment:', error);
-      toast.error('Payment failed. Please try again.');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
   return (
     <Card className="w-full daily-card-contrast relative payment-card">
       {onBackClick && (
@@ -265,27 +328,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
         {/* Express Checkout Element (replaces Payment Request Button) */}
         {showExpressCheckout && (
           <div className="overflow-visible">
-            <ExpressCheckoutElement 
-              options={{
-                buttonType: {
-                  applePay: 'buy',
-                  googlePay: 'buy',
-                  paypal: 'checkout',
-                },
-                business: {
-                  name: 'daily.',
-                },
-                emailRequired: true
-              }}
-              onConfirm={handleExpressCheckoutConfirm}
-              onReady={(event) => {
-                // If no payment methods are available, hide the express checkout section
-                if (!event.availablePaymentMethods || 
-                    Object.keys(event.availablePaymentMethods).length === 0) {
-                  setShowExpressCheckout(false);
-                }
-              }}
-            />
+            <div ref={expressCheckoutRef} id="express-checkout-element" className="mb-4"></div>
             {showExpressCheckout && (
               <div className="mt-4 mb-2 text-center">
                 <Separator>

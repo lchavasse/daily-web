@@ -117,7 +117,6 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  
   // Create a subscription
   const createSubscription = async (name?: string, email?: string) => {
     if (!user?.id) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import Logo from '@/components/Logo';
 import NavigationMenu from '@/components/NavigationMenu';
@@ -15,10 +15,43 @@ const OpenPage: React.FC = () => {
   const [showLandingPage, setShowLandingPage] = useState(false);
   const [logoPosition, setLogoPosition] = useState('center');
   const [isMobile, setIsMobile] = useState(false);
+  const didMountRef = useRef(false);
 
-  // Scroll to top when component mounts
-  useEffect(() => {
+  // Improved scroll to top function
+  const scrollToTop = () => {
+    // Try multiple scroll methods to ensure it works across browsers
     window.scrollTo(0, 0);
+    window.scrollTo({
+      top: 0,
+      behavior: 'auto'
+    });
+    
+    // For iOS Safari specifically
+    if ('scrollTo' in document.body) {
+      document.body.scrollTo(0, 0);
+    }
+    
+    // Also try setting scroll position directly
+    if (document.documentElement) {
+      document.documentElement.scrollTop = 0;
+    }
+    if (document.body) {
+      document.body.scrollTop = 0;
+    }
+  };
+
+  // Scroll to top with a slight delay after component fully mounts and DOM is ready
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      
+      // Use a small delay to ensure DOM is fully rendered
+      const scrollTimer = setTimeout(() => {
+        scrollToTop();
+      }, 50);
+      
+      return () => clearTimeout(scrollTimer);
+    }
   }, []);
 
   // Detect if the device is mobile based on screen width
@@ -26,9 +59,6 @@ const OpenPage: React.FC = () => {
     const checkIfMobile = () => {
       const isMobileView = window.innerWidth < 768;
       setIsMobile(isMobileView);
-      if (isMobileView) {
-        window.scrollTo(0, 0);
-      }
     };
     
     // Check initially
@@ -47,6 +77,9 @@ const OpenPage: React.FC = () => {
 
   // Animation sequence
   useEffect(() => {
+    // Ensure we're at the top before animations start
+    scrollToTop();
+    
     // Step 1: Logo animation appears centered
     const logoTimer = setTimeout(() => {
       // Step 2: Begin shifting logo position
@@ -63,6 +96,8 @@ const OpenPage: React.FC = () => {
           // Step 4: After logo is visible and call request is typing, prepare for landing page
           setTimeout(() => {
             setShowLandingPage(true);
+            // One final scroll check after content is loaded
+            scrollToTop();
           }, 1000); // Delay before showing landing page content
         }, 300);
       }, 400);
@@ -71,6 +106,28 @@ const OpenPage: React.FC = () => {
     
     return () => clearTimeout(logoTimer);
   }, [isMobile]);
+
+  // Additional effect specifically for handling the initial scroll
+  useEffect(() => {
+    // Force scroll position after the component is fully mounted
+    const initialScrollTimer = setTimeout(() => {
+      scrollToTop();
+    }, 300);
+    
+    // Also handle iOS Safari's delayed rendering behavior
+    const handlePageLoad = () => {
+      scrollToTop();
+    };
+    
+    window.addEventListener('load', handlePageLoad);
+    document.addEventListener('readystatechange', handlePageLoad);
+    
+    return () => {
+      clearTimeout(initialScrollTimer);
+      window.removeEventListener('load', handlePageLoad);
+      document.removeEventListener('readystatechange', handlePageLoad);
+    };
+  }, []);
 
   if (isLoading) {
     return (

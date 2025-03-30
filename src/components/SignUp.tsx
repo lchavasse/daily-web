@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Elements } from '@stripe/react-stripe-js';
-import { PaymentElement, useStripe, useElements, PaymentRequestButtonElement } from '@stripe/react-stripe-js';
+import { Elements, ExpressCheckoutElement, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { usePayment } from '@/contexts/PaymentContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -75,6 +74,7 @@ export const SignUp: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) 
     );
   }
   
+  // Updated Elements configuration according to migration guide
   return (
     <Elements stripe={stripe} options={{ 
       clientSecret,
@@ -102,7 +102,6 @@ export const SignUp: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) 
         }
       },
       loader: 'auto',
-      // Fonts are part of the appearance object in newer Stripe versions
       fonts: [
         {
           cssSrc: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap',
@@ -122,13 +121,13 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
   const { isLoading, createSubscription, updateUserProfile } = usePayment();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [paymentRequest, setPaymentRequest] = useState<any>(null);
+  const [showExpressCheckout, setShowExpressCheckout] = useState(true);
   const [processing, setProcessing] = useState(false);
   
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
+      name: user?.name || '',
       email: user?.email || '',
     },
   });
@@ -138,106 +137,23 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
     if (user?.email) {
       setValue('email', user.email);
     }
+    if (user?.name) {
+      setValue('name', user.name);
+    }
   }, [user, setValue]);
 
-  // Initialize payment request button
+  // Initialize elements with proper mode, amount, and currency
   useEffect(() => {
-    if (stripe) {
-      const pr = stripe.paymentRequest({
-        country: 'GB',
+    if (elements) {
+      elements.update({
+        mode: 'payment',
+        amount: 500, // £5.00
         currency: 'gbp',
-        total: {
-          label: 'daily. Subscription',
-          amount: 500, // £5.00
-        },
-        requestPayerName: true,
-        requestPayerEmail: true,
-        // Add support for both browser and native payment methods
-        requestShipping: false,
-        disableWallets: ['browserCard'], // Don't show duplicate card option
-      });
-
-      // Check if the Payment Request is available
-      pr.canMakePayment().then(result => {
-        console.log('Payment Request availability:', result);
-        if (result) {
-          // Log which payment methods are available
-          console.log('Available payment methods:', {
-            applePay: result.applePay,
-            googlePay: result.googlePay,
-            browserPaymentMethods: result.browserPaymentMethods,
-          });
-          setPaymentRequest(pr);
-        } else {
-          console.log('No payment request methods available');
-        }
-      });
-
-      // Handle payment method
-      pr.on('paymentmethod', async (e) => {
-        console.log('Payment method received:', e.paymentMethod.type);
-        setProcessing(true);
-        try {
-          // Create subscription with the payment method details
-          // If payerEmail is available, use it, otherwise it's optional
-          const result = await createSubscription(e.payerName);
-          
-          if (result?.clientSecret) {
-            // Update user profile if we have an email
-            if (e.payerEmail) {
-              await updateUserProfile(e.payerName, e.payerEmail);
-            }
-            
-            // Confirm the payment
-            if (result.isSetupIntent) {
-              const { error } = await stripe.confirmSetup({
-                elements,
-                confirmParams: {
-                  return_url: `${window.location.origin}/dashboard`,
-                  payment_method: e.paymentMethod.id,
-                },
-              });
-
-              if (error) {
-                e.complete('fail');
-                toast.error(error.message);
-              } else {
-                e.complete('success');
-                toast.success('Setup successful!');
-              }
-            } else {
-              const { error } = await stripe.confirmPayment({
-                elements,
-                confirmParams: {
-                  return_url: `${window.location.origin}/dashboard`,
-                  payment_method: e.paymentMethod.id,
-                },
-              });
-
-              if (error) {
-                e.complete('fail');
-                toast.error(error.message);
-              } else {
-                e.complete('success');
-                toast.success('Payment successful!');
-              }
-            }
-          } else {
-            e.complete('fail');
-            toast.error('Failed to create subscription');
-          }
-        } catch (error) {
-          console.error('Error processing payment:', error);
-          e.complete('fail');
-          toast.error('Payment failed. Please try again.');
-        } finally {
-          setProcessing(false);
-        }
       });
     }
-  }, [stripe, elements, navigate, createSubscription, updateUserProfile]);
+  }, [elements]);
 
-  // Handle form submission
+  // Handle form submission for card payments
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     if (!stripe || !elements) return;
     
@@ -290,6 +206,40 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
     }
   };
 
+  // Handle Express Checkout Element confirmation
+  const handleExpressCheckoutConfirm = async (event: any) => {
+    if (!stripe || !elements) return;
+    
+    setProcessing(true);
+    try {
+      // Get user details from Express Checkout if available
+      const userName = event.payerName || user?.name || '';
+      const userEmail = event.payerEmail || user?.email || '';
+      
+      // Update user profile if we have the data
+      if (userName || userEmail) {
+        await updateUserProfile(userName, userEmail);
+      }
+      
+      // Confirm the payment
+      const { error } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/dashboard`,
+        },
+      });
+      
+      if (error) {
+        toast.error(error.message);
+      }
+    } catch (error) {
+      console.error('Error processing Express Checkout payment:', error);
+      toast.error('Payment failed. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   return (
     <Card className="w-full daily-card-contrast relative payment-card">
       {onBackClick && (
@@ -312,26 +262,37 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
       </CardHeader>
       
       <CardContent className="space-y-6 overflow-visible">
-        {/* Apple Pay / Google Pay */}
-        {paymentRequest && (
+        {/* Express Checkout Element (replaces Payment Request Button) */}
+        {showExpressCheckout && (
           <div className="overflow-visible">
-            <PaymentRequestButtonElement
+            <ExpressCheckoutElement 
               options={{
-                paymentRequest,
-                style: {
-                  paymentRequestButton: {
-                    type: 'buy',
-                    theme: 'light',
-                    height: '48px',
-                  },
+                buttonType: {
+                  applePay: 'buy',
+                  googlePay: 'buy',
+                  paypal: 'checkout',
                 },
+                business: {
+                  name: 'daily.',
+                },
+                emailRequired: true
+              }}
+              onConfirm={handleExpressCheckoutConfirm}
+              onReady={(event) => {
+                // If no payment methods are available, hide the express checkout section
+                if (!event.availablePaymentMethods || 
+                    Object.keys(event.availablePaymentMethods).length === 0) {
+                  setShowExpressCheckout(false);
+                }
               }}
             />
-            <div className="mt-4 mb-2 text-center">
-              <Separator>
-                <span className="px-4 text-sm text-muted-foreground">or pay with card</span>
-              </Separator>
-            </div>
+            {showExpressCheckout && (
+              <div className="mt-4 mb-2 text-center">
+                <Separator>
+                  <span className="px-4 text-sm text-muted-foreground">or pay with card</span>
+                </Separator>
+              </div>
+            )}
           </div>
         )}
 
@@ -386,7 +347,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
             >
               {(isLoading || processing) ? (
                 <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-              ) : isSetupIntent ? 'Set Up Payment' : 'Pay Now'}
+              ) : isSetupIntent ? 'Sign up for trial' : 'Subscribe'}
             </Button>
           </div>
         </form>

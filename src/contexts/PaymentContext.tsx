@@ -117,7 +117,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   // Create a subscription
-  const createSubscription = async (name: string, email?: string) => {
+  const createSubscription = async (name?: string, email?: string) => {
     if (!user?.id) {
       toast.error('You must be logged in to subscribe');
       return null;
@@ -126,10 +126,10 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIsLoading(true);
     try {
       // Use provided email if available, otherwise use the user's email from auth context (if available)
-      const customerEmail = email || user?.email || undefined;
-      
+      const customerEmail = email || user?.email || null;
+      const customerName = name || user?.name || null;
       console.log('Making subscription API request with:', {
-        customer_name: name,
+        customer_name: customerName,
         customer_email: customerEmail,
         user_id: user.id,
       });
@@ -140,7 +140,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          customer_name: name,
+          customer_name: customerName,
           customer_email: customerEmail,
           user_id: user.id,
         }),

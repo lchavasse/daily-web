@@ -146,13 +146,24 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
   // Initialize elements with proper mode, amount, and currency
   useEffect(() => {
     if (elements) {
-      elements.update({
-        mode: 'payment',
-        amount: 500, // £5.00
-        currency: 'gbp',
-      });
+      // Set elements mode based on intent type
+      if (isSetupIntent) {
+        elements.update({
+          mode: 'setup',
+          currency: 'gbp',
+          // Don't include amount for setup intent
+        });
+        console.log('Elements configured for setup mode (free trial)');
+      } else {
+        elements.update({
+          mode: 'payment',
+          amount: 500, // £5.00
+          currency: 'gbp',
+        });
+        console.log('Elements configured for payment mode (subscription)');
+      }
     }
-  }, [elements]);
+  }, [elements, isSetupIntent]);
 
   // Mount Express Checkout Element imperatively
   useEffect(() => {
@@ -162,28 +173,35 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
     expressCheckoutRef.current.innerHTML = '';
 
     try {
-      // Create Express Checkout Element
-      const expressCheckoutElement = elements.create('expressCheckout', {
+      // Create Express Checkout Element with options based on intent type
+      const expressCheckoutOptions = {
         buttonType: {
-          applePay: 'buy',
-          googlePay: 'buy',
-          paypal: 'checkout',
+          applePay: isSetupIntent ? 'set_up' : 'buy',
+          googlePay: isSetupIntent ? 'set_up' : 'buy',
+          paypal: isSetupIntent ? 'set_up' : 'checkout',
         },
         business: {
           name: 'daily.',
         },
         emailRequired: true
-      });
+      };
+
+      console.log(`Creating Express Checkout with options for ${isSetupIntent ? 'setup' : 'payment'} mode`, expressCheckoutOptions);
+      
+      // Create Express Checkout Element with type assertions to work around TypeScript limitations
+      // The Stripe types may not fully match the actual API
+      const stripeElements = elements as any;
+      const expressCheckoutElement = stripeElements.create('expressCheckout', expressCheckoutOptions);
 
       // Mount the element
       expressCheckoutElement.mount(expressCheckoutRef.current);
 
-      // Add event listeners
-      expressCheckoutElement.on('ready', (event) => {
+      // Add event listeners - using any type for events because Stripe's types may not match reality
+      expressCheckoutElement.on('ready', (event: any) => {
         console.log('Express Checkout ready:', event);
         // If no payment methods are available, hide the express checkout section
         if (!event.availablePaymentMethods || 
-            Object.keys(event.availablePaymentMethods).length === 0) {
+            Object.keys(event.availablePaymentMethods || {}).length === 0) {
           setShowExpressCheckout(false);
         }
       });
@@ -202,9 +220,10 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
             await updateUserProfile(userName, userEmail);
           }
           
+          console.log(`Using confirm${isSetupIntent ? 'Setup' : 'Payment'} for ${isSetupIntent ? 'trial subscription' : 'regular subscription'}`);
+          
           // Check if this is a SetupIntent or PaymentIntent and call appropriate method
           if (isSetupIntent) {
-            console.log('Using confirmSetup for trial subscription');
             // For free trial, we use SetupIntent
             const { error } = await stripe.confirmSetup({
               elements,
@@ -231,7 +250,6 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
               navigate('/dashboard');
             }
           } else {
-            console.log('Using confirmPayment for regular subscription');
             // For regular payment, we use PaymentIntent
             const { error } = await stripe.confirmPayment({
               elements,

@@ -143,17 +143,25 @@ const RequestCall: React.FC<RequestCallProps> = ({
 
   useEffect(() => {
     let currentIndex = 0;
-    const intervalId = setInterval(() => {
-      if (currentIndex <= text.length) {
-        setDisplayText(text.slice(0, currentIndex));
-        currentIndex++;
-      } else {
-        clearInterval(intervalId);
-        setTypingComplete(true);
-        setTimeout(() => setShowCallIcon(true), 300);
-      }
-    }, 60);
-    return () => clearInterval(intervalId);
+    const startDelay = 1000; // 1 second delay
+
+    // Initial delay before starting the animation
+    const startTimeout = setTimeout(() => {
+      const intervalId = setInterval(() => {
+        if (currentIndex <= text.length) {
+          setDisplayText(text.slice(0, currentIndex));
+          currentIndex++;
+        } else {
+          clearInterval(intervalId);
+          setTypingComplete(true);
+          setTimeout(() => setShowCallIcon(true), 300);
+        }
+      }, 60);
+
+      return () => clearInterval(intervalId);
+    }, startDelay);
+
+    return () => clearTimeout(startTimeout);
   }, [text]);
 
   if (showLogo && logoPosition === 'center') {

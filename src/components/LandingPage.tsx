@@ -46,7 +46,7 @@ const LandingPage: React.FC = () => {
       // First wait for the state to update and animation to start
       setTimeout(() => {
         window.scrollBy({
-          top: 500,
+          top: 300, // this seems to be doing the scroll!!!
           behavior: 'smooth'
         });
       }, 400);
@@ -61,24 +61,12 @@ const LandingPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    // Remove auto-scroll entirely for mobile
-    if (!isMobile && isExpanded) {
-      setTimeout(() => {
-        window.scrollBy({
-          top: 100,
-          behavior: 'smooth'
-        });
-      }, 500);
-    }
-  }, [isMobile, isExpanded]);
-
   // Handle resize events - only for desktop
   useEffect(() => {
     const handleResize = () => {
       if (isExpanded && !isMobile) {
         window.scrollBy({
-          top: 100,
+          top: 500,
           behavior: 'smooth'
         });
       }

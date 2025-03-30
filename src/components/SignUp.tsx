@@ -37,8 +37,9 @@ export const SignUp: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) 
       if (stripe && !clientSecret && !initialized) {
         setInitialized(true);
         try {
-          // Use createSubscription to get client secret
-          const result = await createSubscription(user?.name || '', user?.email || '');
+          // Use createSubscription with just the name, making email optional
+          // The server will use the user_id to get the email if available
+          const result = await createSubscription(user?.name || '');
           if (result?.clientSecret) {
             setClientSecret(result.clientSecret);
             setIsSetupIntent(result.isSetupIntent || false);
@@ -113,6 +114,7 @@ export const SignUp: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) 
   );
 };
 
+
 // Combined Payment Form Component
 const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean }> = ({ onBackClick, isSetupIntent = false }) => {
   const stripe = useStripe();
@@ -177,11 +179,14 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
         setProcessing(true);
         try {
           // Create subscription with the payment method details
-          const result = await createSubscription(e.payerName, e.payerEmail);
+          // If payerEmail is available, use it, otherwise it's optional
+          const result = await createSubscription(e.payerName);
           
           if (result?.clientSecret) {
-            // Update user profile
-            await updateUserProfile(e.payerName, e.payerEmail);
+            // Update user profile if we have an email
+            if (e.payerEmail) {
+              await updateUserProfile(e.payerName, e.payerEmail);
+            }
             
             // Confirm the payment
             if (result.isSetupIntent) {

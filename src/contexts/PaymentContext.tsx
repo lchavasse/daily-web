@@ -14,7 +14,7 @@ interface PaymentContextType {
   currentPeriodEnd: number | null;
   clientSecret: string | null;
   stripe: Stripe | null;
-  createSubscription: (name: string, email: string) => Promise<{ clientSecret: string; isSetupIntent?: boolean } | null>;
+  createSubscription: (name: string, email?: string) => Promise<{ clientSecret: string; isSetupIntent?: boolean } | null>;
   createCheckoutSession: () => Promise<{ clientSecret: string }>;
   updateUserProfile: (name: string, email: string) => Promise<boolean>;
   refreshSubscriptionStatus: () => Promise<void>;
@@ -117,7 +117,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   // Create a subscription
-  const createSubscription = async (name: string, email: string) => {
+  const createSubscription = async (name: string, email?: string) => {
     if (!user?.id) {
       toast.error('You must be logged in to subscribe');
       return null;
@@ -125,9 +125,12 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     setIsLoading(true);
     try {
+      // Use provided email if available, otherwise use the user's email from auth context (if available)
+      const customerEmail = email || user?.email || undefined;
+      
       console.log('Making subscription API request with:', {
         customer_name: name,
-        customer_email: email,
+        customer_email: customerEmail,
         user_id: user.id,
       });
       
@@ -138,7 +141,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         },
         body: JSON.stringify({
           customer_name: name,
-          customer_email: email,
+          customer_email: customerEmail,
           user_id: user.id,
         }),
       });
@@ -177,6 +180,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setIsLoading(false);
     }
   };
+  
 
   // Create a checkout session
   const createCheckoutSession = async () => {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Elements, ExpressCheckoutElement, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Elements, ExpressCheckoutElement, PaymentElement, useStripe, useElements, PaymentRequestButtonElement } from '@stripe/react-stripe-js';
 import { usePayment } from '@/contexts/PaymentContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -74,7 +74,6 @@ export const SignUp: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) 
     );
   }
   
-  // Updated Elements configuration according to migration guide
   return (
     <Elements stripe={stripe} options={{ 
       clientSecret,
@@ -102,6 +101,7 @@ export const SignUp: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) 
         }
       },
       loader: 'auto',
+      // Fonts are part of the appearance object in newer Stripe versions
       fonts: [
         {
           cssSrc: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap',
@@ -121,14 +121,13 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
   const { isLoading, createSubscription, updateUserProfile } = usePayment();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [showExpressCheckout, setShowExpressCheckout] = useState(true);
+  const [paymentRequest, setPaymentRequest] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
-  const expressCheckoutRef = React.useRef<HTMLDivElement>(null);
   
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: user?.name || '',
+      name: '',
       email: user?.email || '',
     },
   });
@@ -138,167 +137,9 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
     if (user?.email) {
       setValue('email', user.email);
     }
-    if (user?.name) {
-      setValue('name', user.name);
-    }
   }, [user, setValue]);
 
-  // Initialize elements with proper mode, amount, and currency
-  useEffect(() => {
-    if (elements) {
-      // Set elements mode based on intent type
-      if (isSetupIntent) {
-        elements.update({
-          mode: 'setup',
-          currency: 'gbp',
-          // Don't include amount for setup intent
-        });
-        console.log('Elements configured for setup mode (free trial)');
-      } else {
-        elements.update({
-          mode: 'payment',
-          amount: 500, // £5.00
-          currency: 'gbp',
-        });
-        console.log('Elements configured for payment mode (subscription)');
-      }
-    }
-  }, [elements, isSetupIntent]);
-
-  // Mount Express Checkout Element imperatively
-  useEffect(() => {
-    if (!stripe || !elements || !expressCheckoutRef.current) return;
-
-    // Clean up any previous elements
-    expressCheckoutRef.current.innerHTML = '';
-
-    try {
-      // Create Express Checkout Element with options based on intent type
-      const expressCheckoutOptions = {
-        buttonType: {
-          applePay: isSetupIntent ? 'set_up' : 'buy',
-          googlePay: isSetupIntent ? 'set_up' : 'buy',
-          paypal: isSetupIntent ? 'set_up' : 'checkout',
-        },
-        business: {
-          name: 'daily.',
-        },
-        emailRequired: true
-      };
-
-      console.log(`Creating Express Checkout with options for ${isSetupIntent ? 'setup' : 'payment'} mode`, expressCheckoutOptions);
-      
-      // Create Express Checkout Element with type assertions to work around TypeScript limitations
-      // The Stripe types may not fully match the actual API
-      const stripeElements = elements as any;
-      const expressCheckoutElement = stripeElements.create('expressCheckout', expressCheckoutOptions);
-
-      // Mount the element
-      expressCheckoutElement.mount(expressCheckoutRef.current);
-
-      // Add event listeners - using any type for events because Stripe's types may not match reality
-      expressCheckoutElement.on('ready', (event: any) => {
-        console.log('Express Checkout ready:', event);
-        // If no payment methods are available, hide the express checkout section
-        if (!event.availablePaymentMethods || 
-            Object.keys(event.availablePaymentMethods || {}).length === 0) {
-          setShowExpressCheckout(false);
-        }
-      });
-
-      expressCheckoutElement.on('confirm', async (event: any) => {
-        if (!stripe || !elements) return;
-        
-        setProcessing(true);
-        try {
-          // Get user details from Express Checkout if available
-          const userName = event.payerName || user?.name || '';
-          const userEmail = event.payerEmail || user?.email || '';
-          
-          // Update user profile if we have the data
-          if (userName || userEmail) {
-            await updateUserProfile(userName, userEmail);
-          }
-          
-          console.log(`Using confirm${isSetupIntent ? 'Setup' : 'Payment'} for ${isSetupIntent ? 'trial subscription' : 'regular subscription'}`);
-          
-          // Check if this is a SetupIntent or PaymentIntent and call appropriate method
-          if (isSetupIntent) {
-            // For free trial, we use SetupIntent
-            const { error } = await stripe.confirmSetup({
-              elements,
-              confirmParams: {
-                return_url: `${window.location.origin}/dashboard`,
-              },
-              redirect: 'if_required',
-            });
-            
-            if (error) {
-              console.error('Setup confirmation error:', error);
-              toast.error(error.message || 'Setup failed');
-              // Call complete if it exists
-              if (typeof event.complete === 'function') {
-                event.complete('fail');
-              }
-            } else {
-              toast.success('Free trial setup successful!');
-              // Call complete if it exists
-              if (typeof event.complete === 'function') {
-                event.complete('success');
-              }
-              // Navigate to dashboard on success if not redirected
-              navigate('/dashboard');
-            }
-          } else {
-            // For regular payment, we use PaymentIntent
-            const { error } = await stripe.confirmPayment({
-              elements,
-              confirmParams: {
-                return_url: `${window.location.origin}/dashboard`,
-              },
-              redirect: 'if_required',
-            });
-            
-            if (error) {
-              console.error('Payment confirmation error:', error);
-              toast.error(error.message || 'Payment failed');
-              // Call complete if it exists
-              if (typeof event.complete === 'function') {
-                event.complete('fail');
-              }
-            } else {
-              toast.success('Payment successful!');
-              // Call complete if it exists
-              if (typeof event.complete === 'function') {
-                event.complete('success');
-              }
-              // Navigate to dashboard on success if not redirected
-              navigate('/dashboard');
-            }
-          }
-        } catch (error) {
-          console.error('Error processing Express Checkout:', error);
-          toast.error('Payment failed. Please try again.');
-          // Call complete if it exists
-          if (typeof event.complete === 'function') {
-            event.complete('fail');
-          }
-        } finally {
-          setProcessing(false);
-        }
-      });
-
-      // Return cleanup function
-      return () => {
-        expressCheckoutElement.unmount();
-      };
-    } catch (error) {
-      console.error('Error creating Express Checkout Element:', error);
-      setShowExpressCheckout(false);
-    }
-  }, [stripe, elements, user, navigate, updateUserProfile, isSetupIntent]);
-
-  // Handle form submission for card payments
+  // Handle form submission
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     if (!stripe || !elements) return;
     
@@ -373,19 +214,6 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
       </CardHeader>
       
       <CardContent className="space-y-6 overflow-visible">
-        {/* Express Checkout Element (replaces Payment Request Button) */}
-        {showExpressCheckout && (
-          <div className="overflow-visible">
-            <div ref={expressCheckoutRef} id="express-checkout-element" className="mb-4"></div>
-            {showExpressCheckout && (
-              <div className="mt-4 mb-2 text-center">
-                <Separator>
-                  <span className="px-4 text-sm text-muted-foreground">or pay with card</span>
-                </Separator>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Card Payment Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 overflow-visible">

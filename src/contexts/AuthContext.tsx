@@ -25,6 +25,7 @@ interface AuthContextType {
   pendingAction: string | null;
   pendingData: any;
   account: string | null;
+  setAccount: (account: string) => void;
   updateAccount: (account: string) => Promise<void>;
   // Separate functions as requested
   initiateOtpSignIn: (phone: string) => Promise<void>;
@@ -399,6 +400,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     pendingAction,
     pendingData,
     account,
+    setAccount,
     updateAccount,
     initiateOtpSignIn,
     verifyOtp,

@@ -1,0 +1,21 @@
+{
+  "name": "daily.",
+  "short_name": "daily.",
+  "description": "your accountability assistant",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FFA9CC",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/splash_logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+} 

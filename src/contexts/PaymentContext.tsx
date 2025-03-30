@@ -33,13 +33,14 @@ export const usePayment = () => {
 };
 
 export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, setAccount } = useAuth();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
   const [currentPeriodEnd, setCurrentPeriodEnd] = useState<number | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [stripe, setStripe] = useState<Stripe | null>(null);
+  const [customerId, setCustomerId] = useState<string | null>(null);
 
   // Initialize Stripe
   useEffect(() => {
@@ -164,9 +165,8 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Set the client secret in the context state
       setClientSecret(data.clientSecret);
-      
-      // Also log the Stripe publishable key to make sure it matches
-      console.log('Using publishable key:', stripePublishableKey);
+      // also set the customer id in the context state
+      setCustomerId(data.customerId);
       
       return {
         clientSecret: data.clientSecret,
@@ -174,7 +174,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       };
     } catch (error: any) {
       console.error('Error creating subscription:', error);
-      toast.error(error.message || 'Failed to create subscription');
+      // toast.error(error.message || 'Failed to create subscription');
       return null;
     } finally {
       setIsLoading(false);
@@ -182,7 +182,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
   
 
-  // Create a checkout session
+  // Create a checkout session - NOT USING THIS FOR NOW
   const createCheckoutSession = async () => {
 
     setIsLoading(true);
@@ -239,13 +239,17 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   // Update user profile with name and email
-  const updateUserProfile = async (name: string, email: string) => {
+  const updateUserProfile = async (name?: string, email?: string) => {
     if (!user?.id) {
       toast.error('You must be logged in to update your profile');
       return false;
     }
 
     setIsLoading(true);
+
+    console.log('Setting user closed locally');
+    setAccount('closed');
+    // we can probably wait for the stripe webhook to change the server then tbh
     try {
       const response = await fetch(`${webhookServerUrl}/api/stripe/update-user`, { // this doesn't really need a dedicated webhook...
         method: 'POST',
@@ -256,6 +260,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
           user_id: user.id,
           name,
           email,
+          customer_id: customerId || null,
         }),
       });
 

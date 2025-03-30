@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Elements, ExpressCheckoutElement, PaymentElement, useStripe, useElements, PaymentRequestButtonElement } from '@stripe/react-stripe-js';
+import { Elements, PaymentElement, useStripe, useElements, } from '@stripe/react-stripe-js';
 import { usePayment } from '@/contexts/PaymentContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -123,6 +123,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
   const navigate = useNavigate();
   const [paymentRequest, setPaymentRequest] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
+  const [elementReady, setElementReady] = useState(false);
   
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -141,7 +142,15 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
 
   // Handle form submission
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    if (!stripe || !elements) return;
+    if (!stripe || !elements || !elementReady) {
+      console.error('Stripe, elements, or PaymentElement not ready', { 
+        stripe: !!stripe, 
+        elements: !!elements,
+        elementReady
+      });
+      toast.error('Payment form not fully loaded. Please wait and try again.');
+      return;
+    }
     
     setProcessing(true);
     try {
@@ -246,14 +255,18 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
             </div>
 
             <div className="payment-element-container overflow-visible">
-              <PaymentElement options={{
-                layout: {
-                  type: 'accordion',
-                  defaultCollapsed: false,
-                  radios: false,
-                  spacedAccordionItems: false
-                }
-              }} />
+              <PaymentElement 
+                options={{
+                  layout: {
+                    type: 'accordion',
+                    defaultCollapsed: false,
+                    radios: false,
+                    spacedAccordionItems: false
+                  }
+                }} 
+                onReady={() => setElementReady(true)}
+                onLoaderStart={() => setElementReady(false)}
+              />
             </div>
             
             <Button 
@@ -262,10 +275,12 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
               style={{ backgroundColor: '#FFA9CC', color: '#502220' }}
               onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#E880AA'}
               onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#FFA9CC'}
-              disabled={!stripe || isLoading || processing}
+              disabled={!stripe || !elementReady || isLoading || processing}
             >
               {(isLoading || processing) ? (
                 <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+              ) : !elementReady ? (
+                <>Loading payment form<LoaderCircle className="ml-2 h-4 w-4 animate-spin" /></>
               ) : isSetupIntent ? 'Sign up for trial' : 'Subscribe'}
             </Button>
           </div>

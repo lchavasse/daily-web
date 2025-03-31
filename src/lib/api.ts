@@ -3,9 +3,17 @@ console.log('Using webhook server URL:', BASE_URL);
 
 export interface Task {
   id: string;
+  user_id: string;
   title: string;
-  updates: string[];
-  deadline: string;
+  description: string | null;
+  due_date: string | null;
+  updates: any; // Using any for jsonb type
+  created_at: string;
+  updated_at: string;
+  completed: boolean;
+  recurring: boolean;
+  project_id?: string | null;
+  important?: boolean;
 }
 
 export interface Idea {
@@ -42,15 +50,16 @@ export interface Project {
 
 export interface UserTask {
   id: string;
+  user_id: string;
   title: string;
   description: string | null;
-  status: string;
-  priority: string;
-  deadline: string | null;
-  project_id: string | null;
-  user_id: string;
+  due_date: string | null;
+  updates: any; // Using any for jsonb type
   created_at: string;
-  completed_at: string | null;
+  updated_at: string;
+  completed: boolean;
+  recurring: boolean;
+  project_id?: string | null;
 }
 
 export interface Reminder {
@@ -130,20 +139,30 @@ export async function fetchUserProjectsForDashboard(userId: string): Promise<Pro
   }
 }
 
-export async function getUserTasks(userId: string): Promise<{ success: boolean, data: UserTask[], error?: string }> {
-  const response = await fetch(`${BASE_URL}/dev/user/tasks`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ userId }),
-  });
-
-  const data = await response.json();
-  return data;
+export async function getUserTasks(userId: string): Promise<{ success: boolean, data: Task[], error?: string }> {
+  try {
+    console.log('Fetching tasks for user:', userId);
+    
+    const response = await fetch(`${BASE_URL}/dev/user/tasks`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId }),
+    });
+    
+    console.log('Raw tasks API response status:', response.status);
+    const rawData = await response.json();
+    console.log('Raw tasks API response data:', rawData);
+    
+    return rawData;
+  } catch (error) {
+    console.error('Error in getUserTasks API call:', error);
+    return { success: false, data: [], error: 'Network error' };
+  }
 }
 
-export async function fetchUserTasksForDashboard(userId: string): Promise<UserTask[]> {
+export async function fetchUserTasksForDashboard(userId: string): Promise<Task[]> {
   try {
     if (!userId) {
       console.error('User ID is required to fetch tasks');
@@ -152,7 +171,13 @@ export async function fetchUserTasksForDashboard(userId: string): Promise<UserTa
     
     const response = await getUserTasks(userId);
     if (response.success && response.data) {
-      return response.data;
+      // Ensure we're returning an array
+      if (Array.isArray(response.data)) {
+        return response.data;
+      } else {
+        console.error('Received non-array data from API:', response.data);
+        return [];
+      }
     } else {
       console.error('Failed to fetch user tasks:', response.error);
       return [];
@@ -196,52 +221,156 @@ export async function fetchUserRemindersForDashboard(userId: string): Promise<Re
   }
 }
 
-export async function getTasks(): Promise<Task[]> {
-  // Mock implementation for now
-  return [
-    {
-      id: '1',
-      title: 'Plan the launch event',
-      updates: ['Booked venue @ Old St.', 'Created Luma event'],
-      deadline: '2023-06-15'
-    },
-    {
-      id: '2',
-      title: 'Finalize marketing materials',
-      updates: ['Created social banners', 'Drafted email campaign'],
-      deadline: '2023-06-10'
-    },
-    {
-      id: '3',
-      title: 'Prepare product demo',
-      updates: ['Outlined key features', 'Built slide deck'],
-      deadline: '2023-06-12'
+export async function createUserTask(
+  userId: string, 
+  taskData: {
+    title: string;
+    description?: string;
+    due_date?: string;
+    updates?: any;
+    recurring?: boolean;
+    completed?: boolean;
+    important?: boolean;
+  }
+): Promise<{ success: boolean; data?: Task; error?: string }> {
+  try {
+    if (!userId) {
+      console.error('User ID is required to create a task');
+      return { success: false, error: 'User ID is required' };
     }
-  ];
+    
+    // Create the payload with defaults
+    const payload: {
+      userId: string;
+      title: string;
+      description?: string;
+      due_date?: string;
+      updates?: any;
+      recurring?: boolean;
+      completed?: boolean;
+      timezone?: string;
+    } = {
+      userId,
+      ...taskData,
+      // Set defaults for optional fields if not provided
+      updates: taskData.updates || [],
+      recurring: taskData.recurring !== undefined ? taskData.recurring : false,
+      completed: taskData.completed !== undefined ? taskData.completed : false
+    };
+    
+    // Include the browser's timezone information when sending due dates
+    if (taskData.due_date) {
+      payload.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      console.log(`Including timezone information: ${payload.timezone}`);
+    }
+    
+    const response = await fetch(`${BASE_URL}/dev/user/tasks/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('Failed to create task:', data.error || 'Unknown error');
+      return { 
+        success: false, 
+        error: data.error || 'Failed to create task' 
+      };
+    }
+    
+    return { success: true, data: data.task };
+  } catch (error) {
+    console.error('Error creating task:', error);
+    return { success: false, error: 'Network error when creating task' };
+  }
 }
 
-export async function getIdeas(): Promise<Idea[]> {
-  // Mock implementation for now
-  return [
-    {
-      id: '1',
-      title: 'Voice assistant improvements',
-      content: 'Add more natural language processing capabilities',
-      date: '2023-05-28'
-    },
-    {
-      id: '2',
-      title: 'New dashboard feature',
-      content: 'Create a weekly summary view',
-      date: '2023-05-30'
-    },
-    {
-      id: '3',
-      title: 'Mobile app integration',
-      content: 'Sync data between web and mobile',
-      date: '2023-06-01'
+export async function updateUserTask(
+  userId: string,
+  taskId: string,
+  taskData: Partial<{
+    title: string;
+    description: string;
+    due_date: string;
+    updates: any;
+    recurring: boolean;
+    completed: boolean;
+    project_id: string;
+    important: boolean;
+  }>
+): Promise<{ success: boolean; data?: Task; error?: string }> {
+  try {
+    if (!userId || !taskId) {
+      console.error('User ID and Task ID are required to update a task');
+      return { success: false, error: 'User ID and Task ID are required' };
     }
-  ];
+    
+    // Add timezone information if we're updating a due date
+    const payload: {
+      userId: string;
+      taskId: string;
+      title?: string;
+      description?: string;
+      due_date?: string;
+      updates?: any;
+      recurring?: boolean;
+      completed?: boolean;
+      project_id?: string;
+      timezone?: string;
+    } = {
+      userId,
+      taskId,
+      ...taskData,
+    };
+    
+    // Include the browser's timezone information when sending due dates
+    if (taskData.due_date !== undefined) {
+      payload.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    }
+    
+    const response = await fetch(`${BASE_URL}/dev/user/tasks/update`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('Failed to update task:', data.error || 'Unknown error');
+      return { 
+        success: false, 
+        error: data.error || 'Failed to update task' 
+      };
+    }
+    
+    return { success: true, data: data.task };
+  } catch (error) {
+    console.error('Error updating task:', error);
+    return { success: false, error: 'Network error when updating task' };
+  }
+}
+
+export async function toggleTaskCompletion(
+  userId: string,
+  taskId: string,
+  currentStatus: boolean
+): Promise<{ success: boolean; data?: Task; error?: string }> {
+  return updateUserTask(userId, taskId, { completed: !currentStatus });
+}
+
+export async function toggleTaskImportance(
+  userId: string,
+  taskId: string,
+  currentStatus: boolean
+): Promise<{ success: boolean; data?: Task; error?: string }> {
+  return updateUserTask(userId, taskId, { important: !currentStatus });
 }
 
 export async function getJournalEntries(): Promise<JournalEntry[]> {

@@ -40,10 +40,10 @@ const UserDashboard: React.FC = () => {
   }, [userId]);
 
   return (
-    <div className="w-full mx-auto space-y-6 animate-fade-in flex flex-col items-center zindex-10">
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in flex flex-col items-center zindex-10">
 
       {/* Tab navigation and content */}
-      <div className="daily-card w-3/4 max-w-4xl">
+      <div className="daily-card w-full mx-8">
       <h2 className="text-md font-medium mb-4">Hi {user?.name || 'there'}, how have you been..?</h2>
         <div className="flex rounded-lg overflow-hidden mb-6">
           <button
@@ -71,11 +71,14 @@ const UserDashboard: React.FC = () => {
             journal
           </button>
         </div>
+        {/*
           <div className="flex items-center justify-center daily-card-contrast rounded-lg">
             <h2 className="text-xl">!!! Coming Soon !!!</h2>
           </div>
-        {/*
+        */}
+        
         {activeView === 'tasks' && <TasksView />}
+        {/*
         {activeView === 'ideas' && <IdeasView />}
         {activeView === 'journal' && <JournalView />}
         */}

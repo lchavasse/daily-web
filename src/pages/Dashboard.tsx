@@ -92,11 +92,11 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center overflow-y-auto">
-      <div className="w-full mx-auto pt-8 px-6 pb-6 ">
+      <div className="w-full mx-auto pt-8 pb-6 ">
         {/* Animated header section - Different layouts for mobile and desktop */}
         {isMobile ? (
           // Mobile layout - Logo stacked above call request
-          <div className="mb-6 flex flex-col items-center space-y-4">
+          <div className="mb-6 flex flex-col items-center space-y-4 ">
             {/* Logo centered at the top */}
             <div className="flex justify-center animate-scale-in">
               <Logo />

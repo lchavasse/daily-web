@@ -57,83 +57,141 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
     const initializePayment = async () => {
       if (!stripe || initialized) return;
       
+      console.log('Initializing payment process...');
       setInitialized(true);
       try {
+        console.log('Calling createSetupIntent...');
         const result = await createSetupIntent();
-        console.log('result: ', result);
+        console.log('Setup intent result:', result);
         if (result?.clientSecret && isMounted) {
+          console.log('Setting client secret...');
           setClientSecret(result.clientSecret);
+        } else {
+          console.error('No client secret received or component unmounted');
+          if (isMounted) {
+            setError('Failed to initialize payment');
+            setIsLoading(false);
+          }
         }
       } catch (error) {
         console.error('Failed to initialize payment:', error);
         if (isMounted) {
           toast.error('Failed to initialize payment');
+          setError('Failed to initialize payment');
+          setIsLoading(false);
         }
       } finally {
         if (isMounted) {
+          console.log('Finishing initialization, setting loading to false');
           setIsLoading(false);
         }
       }
     };
     
-    initializePayment();
+    if (stripe && !initialized) {
+      console.log('Stripe is available, starting initialization');
+      initializePayment();
+    }
     
     return () => {
+      console.log('Payment initialization effect cleanup');
       isMounted = false;
     };
   }, [stripe, createSetupIntent, initialized]);
 
   // Mount Express Checkout element
   useEffect(() => {
+    console.log('Express checkout mounting effect triggered', {
+      stripe: !!stripe,
+      elements: !!elements,
+      clientSecret: !!clientSecret,
+      elementReady
+    });
+    
     let isMounted = true;
     let expressCheckoutElement;
     
     const mountElement = () => {
-      if (!stripe || !elements || !clientSecret || elementReady || !isMounted) return;
+      if (!stripe || !elements || !clientSecret || elementReady || !isMounted) {
+        console.log('Cannot mount element yet:', {
+          stripe: !!stripe,
+          elements: !!elements,
+          clientSecret: !!clientSecret,
+          elementReady,
+          isMounted
+        });
+        return;
+      }
       
       try {
         const domElement = document.getElementById('express-checkout');
         if (!domElement) {
-          // Try again in a bit if the DOM element isn't ready
+          console.log('DOM element not found, will retry in 100ms');
           setTimeout(mountElement, 100);
           return;
         }
         
+        console.log('DOM element found, creating ExpressCheckout element');
+        
         // Only create the element if we haven't already
         if (!expressCheckoutElement && elements) {
           try {
+            console.log('Creating express checkout element');
             expressCheckoutElement = elements.create('expressCheckout');
+            console.log('Successfully created express checkout element');
           } catch (createError) {
             console.error('Error creating express checkout element:', createError);
-            if (isMounted) setError('Failed to create payment form');
+            if (isMounted) {
+              setError('Failed to create payment form');
+              setElementReady(false); // Ensure we don't get stuck
+            }
             return;
           }
         }
         
         try {
+          console.log('Mounting express checkout element');
           expressCheckoutElement.mount('#express-checkout');
+          console.log('Express checkout element mounted, setting up ready event');
+          
           expressCheckoutElement.on('ready', () => {
-            if (isMounted) setElementReady(true);
+            console.log('Express checkout element ready event fired');
+            if (isMounted) {
+              setElementReady(true);
+              console.log('Element ready state set to true');
+            }
           });
-          console.log('Express checkout element mounted successfully');
         } catch (mountError) {
           console.error('Error mounting express checkout element:', mountError);
-          if (isMounted) setError('Failed to mount payment form');
+          if (isMounted) {
+            setError('Failed to mount payment form');
+            // Try to recover by forcing the loading state to end
+            setElementReady(false);
+            setIsLoading(false);
+          }
         }
       } catch (error) {
         console.error('Unexpected error in mountElement:', error);
-        if (isMounted) setError('An unexpected error occurred');
+        if (isMounted) {
+          setError('An unexpected error occurred');
+          // Ensure we're not stuck in loading state
+          setIsLoading(false);
+        }
       }
     };
     
     if (stripe && elements && clientSecret && !elementReady) {
-      mountElement();
+      console.log('All prerequisites met, attempting to mount element');
+      // Add small delay to ensure DOM is ready
+      setTimeout(mountElement, 50);
     }
     
     return () => {
+      console.log('Express checkout effect cleanup');
       isMounted = false;
       if (expressCheckoutElement) {
         try {
+          console.log('Unmounting express checkout element');
           expressCheckoutElement.unmount();
         } catch (e) {
           console.error('Error unmounting element:', e);
@@ -141,6 +199,26 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
       }
     };
   }, [stripe, elements, clientSecret, elementReady]);
+
+  // Add an escape hatch for infinite loading
+  useEffect(() => {
+    let timeoutId;
+    
+    if (clientSecret && !elementReady && isLoading) {
+      console.log('Setting up loading timeout safety');
+      timeoutId = setTimeout(() => {
+        console.log('Loading timeout triggered - forcing loading to end');
+        setIsLoading(false);
+        setError('Payment form took too long to load. You can try reloading the page.');
+      }, 10000); // 10 second timeout
+    }
+    
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [clientSecret, elementReady, isLoading]);
 
   // Form submission handler
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
@@ -181,7 +259,19 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
   if (!stripe || isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <LoaderCircle className="h-8 w-8 animate-spin" />
+        <div className="text-center">
+          <LoaderCircle className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Loading payment form...</p>
+          {clientSecret && !elementReady && (
+            <Button 
+              className="mt-4" 
+              variant="outline" 
+              onClick={() => setIsLoading(false)}
+            >
+              Continue anyway
+            </Button>
+          )}
+        </div>
       </div>
     );
   }

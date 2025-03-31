@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { LoaderCircle, ArrowLeft } from 'lucide-react';
 
 
+
 // Form validation schema
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -213,7 +214,9 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
             {/* Express Checkout Element Container */}
             <div style={{ marginBottom: '20px' }}>
               {!elementReady && !error && <p>Loading payment options...</p>}
+              <label>Card
               <div id="express-checkout" style={{ minHeight: '50px' }}></div>
+              </label>
             </div>
             
             <Button 

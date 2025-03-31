@@ -121,6 +121,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Create a setup intent
   const createSetupIntent = async () => {
+    console.log('creating setup intent');
     const response = await fetch(`${webhookServerUrl}/api/stripe/create-setup-intent`, {
       method: 'POST',
       headers: {
@@ -128,6 +129,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       },
     });
     const data = await response.json();
+    console.log('data: ', data);
     setClientSecret(data.clientSecret);
     return { clientSecret: data.clientSecret };
   };

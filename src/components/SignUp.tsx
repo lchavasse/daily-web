@@ -44,6 +44,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
           // Use createSubscription with just the name, making email optional
           // The server will use the user_id to get the email if available
           const result = await createSetupIntent();
+          console.log('result: ', result);
           if (result?.clientSecret) {
             setClientSecret(result.clientSecret);
             const expressCheckoutElement = elements.create('expressCheckout');

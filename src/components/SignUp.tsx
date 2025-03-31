@@ -47,9 +47,6 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
           console.log('result: ', result);
           if (result?.clientSecret) {
             setClientSecret(result.clientSecret);
-            const expressCheckoutElement = elements.create('expressCheckout');
-            expressCheckoutElement.mount('#express-checkout');
-            expressCheckoutElement.on('ready', () => setElementReady(true)); // Confirm it’s loaded
           }
         } catch (error) {
           console.error('Failed to initialize payment:', error);
@@ -61,7 +58,32 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
     };
     
     initializePayment();
-  }, [stripe, clientSecret, initialized, user, elements]);
+  }, [stripe, clientSecret, initialized, user]);
+
+  // Separate useEffect to mount Express Checkout element
+  useEffect(() => {
+    // Only attempt to mount the element if we have all the required pieces
+    if (stripe && elements && clientSecret && !elementReady) {
+      // Small timeout to ensure DOM is ready
+      setTimeout(() => {
+        try {
+          const expressCheckoutElement = elements.create('expressCheckout');
+          const domElement = document.getElementById('express-checkout');
+          
+          if (!domElement) {
+            console.error('Express checkout DOM element not found');
+            return;
+          }
+          
+          expressCheckoutElement.mount('#express-checkout');
+          expressCheckoutElement.on('ready', () => setElementReady(true));
+        } catch (error) {
+          console.error('Error mounting express checkout element:', error);
+          setError('Failed to initialize payment form');
+        }
+      }, 100);
+    }
+  }, [stripe, elements, clientSecret, elementReady]);
   
   if (!stripe || isLoading) {
     return (
@@ -106,7 +128,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
       elements,
       clientSecret,
       confirmParams: {
-        return_url: window.location.origin + '/success', // Temporary redirect (won’t be used)
+        return_url: window.location.origin + '/success', // Temporary redirect (won't be used)
       },
       redirect: 'if_required', // Prevent redirect unless necessary
     });

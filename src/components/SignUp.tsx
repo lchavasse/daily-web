@@ -64,24 +64,36 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
   useEffect(() => {
     // Only attempt to mount the element if we have all the required pieces
     if (stripe && elements && clientSecret && !elementReady) {
-      // Small timeout to ensure DOM is ready
-      setTimeout(() => {
-        try {
-          const expressCheckoutElement = elements.create('expressCheckout');
+      try {
+        // Create the element once we have everything ready
+        const expressCheckoutElement = elements.create('expressCheckout');
+        
+        // Define a function to mount the element
+        const mountElement = () => {
           const domElement = document.getElementById('express-checkout');
-          
           if (!domElement) {
-            console.error('Express checkout DOM element not found');
+            console.error('Express checkout DOM element not found, will retry');
+            // Retry with a setTimeout
+            setTimeout(mountElement, 100);
             return;
           }
           
-          expressCheckoutElement.mount('#express-checkout');
-          expressCheckoutElement.on('ready', () => setElementReady(true));
-        } catch (error) {
-          console.error('Error mounting express checkout element:', error);
-          setError('Failed to initialize payment form');
-        }
-      }, 100);
+          try {
+            expressCheckoutElement.mount('#express-checkout');
+            expressCheckoutElement.on('ready', () => setElementReady(true));
+            console.log('Express checkout element mounted successfully');
+          } catch (mountError) {
+            console.error('Error mounting express checkout element:', mountError);
+            setError('Failed to mount payment form');
+          }
+        };
+        
+        // Start the mounting process
+        mountElement();
+      } catch (error) {
+        console.error('Error creating express checkout element:', error);
+        setError('Failed to initialize payment form');
+      }
     }
   }, [stripe, elements, clientSecret, elementReady]);
   

@@ -127,6 +127,9 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        payment_method_types: ['card', 'apple_pay', 'google_pay']
+      }),
     });
     const data = await response.json();
     console.log('data: ', data);

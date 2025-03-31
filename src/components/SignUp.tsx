@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Elements, useStripe, useElements, ExpressCheckoutElement, PaymentElement } from '@stripe/react-stripe-js';
+import { Elements, useStripe, useElements } from '@stripe/react-stripe-js';
 import { usePayment } from '@/contexts/PaymentContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -12,8 +12,10 @@ import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { LoaderCircle, ArrowLeft } from 'lucide-react';
+
 
 // Form validation schema
 const formSchema = z.object({
@@ -22,170 +24,82 @@ const formSchema = z.object({
 });
 
 // Combined Payment Form Component
-const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) => {
+const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean }> = ({ onBackClick, isSetupIntent = false }) => {
   const { createSetupIntent, confirmSetupIntent } = usePayment();
   const stripe = useStripe();
   const elements = useElements();
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [useCard, setUseCard] = useState(false);
-
-  const { register, handleSubmit, formState: { errors }, setValue, getValues } = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: '',
-      email: user?.email || '',
-    },
-  });
+  const [initialized, setInitialized] = useState(false);
+  const [elementReady, setElementReady] = useState(false); // Track when element mounts
+  const [error, setError] = useState<string | null>(null); // Track any errors
+  const { user } = useAuth();
 
   useEffect(() => {
-    if (user?.email) {
-      setValue('email', user.email);
-    }
-  }, [user, setValue]);
-
-  useEffect(() => {
-    let isMounted = true;
-
     const initializePayment = async () => {
-      if (!stripe) return;
-
-      try {
-        console.log('Creating setup intent');
-        const result = await createSetupIntent();
-        if (result?.clientSecret && isMounted) {
-          console.log('Client secret received:', result.clientSecret);
-          setClientSecret(result.clientSecret);
-          setIsLoading(false);
-        } else {
-          setError('Failed to initialize payment');
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error('Failed to initialize payment:', error);
-        if (isMounted) {
+      if (stripe && !clientSecret && !initialized) {
+        setInitialized(true);
+        try {
+          // Use createSubscription with just the name, making email optional
+          // The server will use the user_id to get the email if available
+          const result = await createSetupIntent();
+          console.log('result: ', result);
+          if (result?.clientSecret) {
+            setClientSecret(result.clientSecret);
+          }
+        } catch (error) {
+          console.error('Failed to initialize payment:', error);
           toast.error('Failed to initialize payment');
-          setError('Failed to initialize payment');
+        } finally {
           setIsLoading(false);
         }
       }
     };
+    
+    initializePayment();
+  }, [stripe, clientSecret, initialized, user]);
 
-    if (stripe) {
-      initializePayment();
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [stripe, createSetupIntent]);
-
-  const handleExpressCheckoutConfirm = async (event) => {
-    if (!stripe || !elements || !clientSecret) return;
-
-    setIsLoading(true);
-    console.log('Confirming Express Checkout SetupIntent');
-    const { error: confirmError, setupIntent } = await stripe.confirmSetup({
-      elements,
-      clientSecret,
-      confirmParams: {
-        return_url: window.location.origin + '/success',
-      },
-      redirect: 'if_required',
-    });
-
-    if (confirmError) {
-      console.error('Express Checkout confirmation failed:', confirmError);
-      setError(confirmError.message);
-      setIsLoading(false);
-    } else if (setupIntent && setupIntent.status === 'succeeded') {
-      console.log('SetupIntent succeeded:', setupIntent.id);
-      await confirmSubscription(setupIntent.payment_method);
-    } else {
-      setError('SetupIntent confirmation incomplete');
-      setIsLoading(false);
-    }
-  };
-
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    if (!stripe || !elements || !clientSecret) return;
-
-    setIsLoading(true);
-    console.log('Confirming Card SetupIntent');
-    const { error: confirmError, setupIntent } = await stripe.confirmSetup({
-      elements,
-      clientSecret,
-      confirmParams: {
-        return_url: window.location.origin + '/success',
-        payment_method_data: {
-          billing_details: {
-            name: data.name,
-            email: data.email,
-          },
-        },
-      },
-      redirect: 'if_required',
-    });
-
-    if (confirmError) {
-      console.error('Card confirmation failed:', confirmError);
-      setError(confirmError.message);
-      setIsLoading(false);
-    } else if (setupIntent && setupIntent.status === 'succeeded') {
-      console.log('SetupIntent succeeded:', setupIntent.id);
-      await confirmSubscription(setupIntent.payment_method);
-    } else {
-      setError('SetupIntent confirmation incomplete');
-      setIsLoading(false);
-    }
-  };
-
-  const confirmSubscription = async (paymentMethodId) => {
-    if (!paymentMethodId) {
-      setError('No payment method ID provided');
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      console.log('Confirming subscription with paymentMethodId:', paymentMethodId);
-      const confirmResult = await confirmSetupIntent(paymentMethodId, {
-        name: useCard ? getValues('name') : undefined,
-        email: useCard ? getValues('email') : undefined,
-      });
-      if (confirmResult.success) {
-        console.log('Subscription created:', confirmResult.data.subscriptionId);
-        handleUserDetails(
-          useCard ? getValues('name') : confirmResult.data.name,
-          useCard ? getValues('email') : confirmResult.data.email
-        );
-        navigate('/success');
-      } else {
-        setError(confirmResult.data || 'Failed to create subscription');
+  // Separate useEffect to mount Express Checkout element
+  useEffect(() => {
+    // Only attempt to mount the element if we have all the required pieces
+    if (stripe && elements && clientSecret && !elementReady) {
+      try {
+        // Create the element once we have everything ready
+        const expressCheckoutElement = elements.create('expressCheckout');
+        
+        // Define a function to mount the element
+        const mountElement = () => {
+          const domElement = document.getElementById('express-checkout');
+          if (!domElement) {
+            console.error('Express checkout DOM element not found, will retry');
+            // Retry with a setTimeout
+            setTimeout(mountElement, 100);
+            return;
+          }
+          
+          try {
+            expressCheckoutElement.mount('#express-checkout');
+            expressCheckoutElement.on('ready', () => setElementReady(true));
+            console.log('Express checkout element mounted successfully');
+          } catch (mountError) {
+            console.error('Error mounting express checkout element:', mountError);
+            setError('Failed to mount payment form');
+          }
+        };
+        
+        // Start the mounting process
+        mountElement();
+      } catch (error) {
+        console.error('Error creating express checkout element:', error);
+        setError('Failed to initialize payment form');
       }
-    } catch (err) {
-      console.error('Subscription confirmation error:', err);
-      setError('An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
     }
-  };
-
-  const handleUserDetails = (name: string, email: string) => {
-    console.log('User Details:', { name, email });
-    // Add your logic here
-  };
-
+  }, [stripe, elements, clientSecret, elementReady]);
+  
   if (!stripe || isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <LoaderCircle className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Loading payment form...</p>
-        </div>
+        <LoaderCircle className="h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -200,11 +114,55 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
       </div>
     );
   }
+  
+  const { register, handleSubmit, formState: { errors }, setValue } = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      email: user?.email || '',
+    },
+  });
+
+  // Update form values if user changes
+  useEffect(() => {
+    if (user?.email) {
+      setValue('email', user.email);
+    }
+  }, [user, setValue]);
+
+  // Handle form submission
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    if (!stripe || !elements || !clientSecret) return;
+    
+    setIsLoading(true);
+    const result = await stripe.confirmSetup({
+      elements,
+      clientSecret,
+      confirmParams: {
+        return_url: window.location.origin + '/success', // Temporary redirect (won't be used)
+      },
+      redirect: 'if_required', // Prevent redirect unless necessary
+    });
+
+    if (result.error) {
+      setError(result.error.message);
+    } else {
+      // Payment method confirmed, now create subscription
+      const paymentMethodId = result.setupIntent.payment_method;
+      const confirmResult = await confirmSetupIntent(paymentMethodId as string);
+      if (confirmResult.success) {
+        console.log('Subscription created:', confirmResult.data.subscriptionId);
+      } else {
+        setError(confirmResult.data);
+      }
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Card className="w-full daily-card-contrast relative payment-card">
       {onBackClick && (
-        <button
+        <button 
           onClick={onBackClick}
           className="absolute top-4 right-4 p-2 rounded-full hover:bg-black/5 transition-colors"
           title="Go back"
@@ -212,95 +170,64 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
           <ArrowLeft size={20} />
         </button>
       )}
+      
       <CardHeader>
         <CardTitle>Subscribe to daily.</CardTitle>
         <CardDescription>
-          Set up your payment method for your 7-day free trial. You won’t be charged until the trial ends.
+          "Set up your payment method for your 7-day free trial. You won't be charged until the trial ends."
         </CardDescription>
       </CardHeader>
+      
       <CardContent className="space-y-6 overflow-visible">
+
+        {/* Card Payment Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 overflow-visible">
-          <div className="space-y-4">
-            <div className="flex space-x-4">
-              <Label className="flex items-center">
-                <input
-                  type="radio"
-                  checked={!useCard}
-                  onChange={() => setUseCard(false)}
-                  disabled={isLoading}
-                  className="mr-2"
-                />
-                Google Pay / Apple Pay
-              </Label>
-              <Label className="flex items-center">
-                <input
-                  type="radio"
-                  checked={useCard}
-                  onChange={() => setUseCard(true)}
-                  disabled={isLoading}
-                  className="mr-2"
-                />
-                Card
-              </Label>
-            </div>
-
-            <div style={{ display: useCard ? 'none' : 'block' }}>
-              <ExpressCheckoutElement
-                options={{
-                  buttonTheme: { googlePay: 'black', applePay: 'white' },
-                }}
-                onConfirm={handleExpressCheckoutConfirm}
+          <div className="space-y-4 overflow-visible">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input 
+                id="name" 
+                placeholder="name"
+                className="daily-input"
+                {...register('name')} 
               />
+              {errors.name && (
+                <p className="text-sm text-red-500">{errors.name.message}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                placeholder="email"
+                type="email"
+                className="daily-input"
+                {...register('email')} 
+              />
+              {errors.email && (
+                <p className="text-sm text-red-500">{errors.email.message}</p>
+              )}
             </div>
 
-            {useCard && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="name"
-                    className="daily-input"
-                    {...register('name')}
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-red-500">{errors.name.message}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    placeholder="email"
-                    type="email"
-                    className="daily-input"
-                    {...register('email')}
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-red-500">{errors.email.message}</p>
-                  )}
-                </div>
-                <PaymentElement />
-                <Button
-                  type="submit"
-                  className="w-full mt-6"
-                  style={{ backgroundColor: '#FFA9CC', color: '#502220' }}
-                  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#E880AA')}
-                  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#FFA9CC')}
-                  disabled={!stripe || isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Processing...
-                    </>
-                  ) : (
-                    'Subscribe'
-                  )}
-                </Button>
-              </div>
-            )}
-
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            {/* Express Checkout Element Container */}
+            <div style={{ marginBottom: '20px' }}>
+              {!elementReady && !error && <p>Loading payment options...</p>}
+              <div id="express-checkout" style={{ minHeight: '50px' }}></div>
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="w-full mt-6" 
+              style={{ backgroundColor: '#FFA9CC', color: '#502220' }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#E880AA'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#FFA9CC'}
+              disabled={!stripe || isLoading}
+            >
+              {isLoading ? (
+                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+              ) : 'Subscribe'}
+            </Button>
           </div>
         </form>
       </CardContent>
@@ -310,43 +237,42 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
 
 // Wrapper component with Stripe Elements
 export const SignUp: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) => {
-  const { stripePromise } = usePayment();
 
+  const { stripePromise } = usePayment();
+  
   return (
-    <Elements
-      stripe={stripePromise}
-      options={{
-        appearance: {
-          theme: 'stripe',
-          variables: {
-            colorPrimary: '#FFA9CC',
-            colorBackground: '#ffffff',
-            colorText: '#000000',
-            colorDanger: '#df1b41',
-            fontFamily: 'system-ui, sans-serif',
-            spacingUnit: '4px',
-            borderRadius: '8px',
-          },
-          rules: {
-            '.Input': {
-              borderWidth: '1px',
-            },
-            '.Tab': {
-              padding: '8px 16px',
-            },
-            '.TabIcon': {
-              marginRight: '8px',
-            },
-          },
+    <Elements stripe={stripePromise} options={{ 
+      appearance: {
+        theme: 'stripe',
+        variables: {
+          colorPrimary: '#FFA9CC',
+          colorBackground: '#ffffff',
+          colorText: '#000000',
+          colorDanger: '#df1b41',
+          fontFamily: 'system-ui, sans-serif',
+          spacingUnit: '4px',
+          borderRadius: '8px',
         },
-        loader: 'auto',
-        fonts: [
-          {
-            cssSrc: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap',
+        rules: {
+          '.Input': {
+            borderWidth: '1px',
           },
-        ],
-      }}
-    >
+          '.Tab': {
+            padding: '8px 16px'
+          },
+          '.TabIcon': {
+            marginRight: '8px'
+          }
+        }
+      },
+      loader: 'auto',
+      // Fonts are part of the appearance object in newer Stripe versions
+      fonts: [
+        {
+          cssSrc: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap',
+        },
+      ]
+    }}>
       <PaymentForm onBackClick={onBackClick} />
     </Elements>
   );

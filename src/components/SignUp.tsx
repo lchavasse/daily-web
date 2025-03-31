@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from '@/components/ui/separator';
 import { LoaderCircle, ArrowLeft } from 'lucide-react';
 
-const { stripePromise } = usePayment();
+
 
 // Form validation schema
 const formSchema = z.object({
@@ -203,6 +203,8 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
 
 // Wrapper component with Stripe Elements
 export const SignUp: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) => {
+
+  const { stripePromise } = usePayment();
   
   return (
     <Elements stripe={stripePromise} options={{ 

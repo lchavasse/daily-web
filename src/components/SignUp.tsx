@@ -24,23 +24,16 @@ const formSchema = z.object({
 // Custom hook to mount Stripe elements safely
 const useMountStripeElement = (stripe, elements, clientSecret, elementType, selector, onReady) => {
   const [mounted, setMounted] = useState(false);
+  const elementRef = useRef(null);
 
   useEffect(() => {
-    if (!stripe || !elements || !clientSecret || mounted) return;
+    if (!stripe || !elements || !clientSecret || mounted || !elementRef.current) return;
 
-    let retries = 0;
-    const maxRetries = 10;
-    const retryDelay = 100; // ms
-
+    let intervalId;
     const mountElement = () => {
       const domElement = document.querySelector(selector);
       if (!domElement) {
-        if (retries < maxRetries) {
-          retries++;
-          setTimeout(mountElement, retryDelay);
-          return;
-        }
-        console.error(`Failed to find ${selector} after ${maxRetries} retries`);
+        console.log(`Waiting for ${selector} to appear in DOM...`);
         return;
       }
 
@@ -50,13 +43,17 @@ const useMountStripeElement = (stripe, elements, clientSecret, elementType, sele
         } : {
           fields: { billingDetails: { name: 'never', email: 'never' } },
         });
+        console.log(`Mounting ${elementType} to ${selector}`);
         element.mount(selector);
         element.on('ready', () => {
+          console.log(`${elementType} ready`);
           setMounted(true);
           onReady();
+          clearInterval(intervalId); // Stop checking once mounted
         });
 
         return () => {
+          console.log(`Unmounting ${elementType}`);
           element.unmount();
         };
       } catch (error) {
@@ -64,10 +61,14 @@ const useMountStripeElement = (stripe, elements, clientSecret, elementType, sele
       }
     };
 
-    mountElement();
+    intervalId = setInterval(mountElement, 100); // Check every 100ms
+
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [stripe, elements, clientSecret, elementType, selector, mounted, onReady]);
 
-  return mounted;
+  return { mounted, elementRef };
 };
 
 // Combined Payment Form Component
@@ -82,7 +83,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
   const [error, setError] = useState<string | null>(null);
   const [useCard, setUseCard] = useState(false);
 
-  const expressReady = useMountStripeElement(
+  const { mounted: expressReady, elementRef: expressRef } = useMountStripeElement(
     stripe,
     elements,
     clientSecret,
@@ -90,7 +91,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
     '#express-checkout',
     () => setIsLoading(false)
   );
-  const cardReady = useMountStripeElement(
+  const { mounted: cardReady, elementRef: cardRef } = useMountStripeElement(
     stripe,
     elements,
     clientSecret,
@@ -120,8 +121,10 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
       if (!stripe) return;
 
       try {
+        console.log('Creating setup intent');
         const result = await createSetupIntent();
         if (result?.clientSecret && isMounted) {
+          console.log('Client secret received:', result.clientSecret);
           setClientSecret(result.clientSecret);
         } else {
           setError('Failed to initialize payment');
@@ -174,10 +177,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
     } else {
       const paymentMethodId = result.setupIntent.payment_method;
       try {
-        const confirmResult = await confirmSetupIntent(paymentMethodId, {
-          name: useCard ? data.name : undefined,
-          email: useCard ? data.email : undefined,
-        });
+        const confirmResult = await confirmSetupIntent(paymentMethodId as string, data.name, data.email);
         if (confirmResult.success) {
           console.log('Subscription created:', confirmResult.data.subscriptionId);
           handleUserDetails(
@@ -268,7 +268,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
             </div>
 
             <div style={{ display: useCard ? 'none' : 'block' }}>
-              <div id="express-checkout" style={{ minHeight: '50px' }}></div>
+              <div id="express-checkout" ref={expressRef} style={{ minHeight: '50px' }}></div>
             </div>
 
             {useCard && (
@@ -298,7 +298,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
                     <p className="text-sm text-red-500">{errors.email.message}</p>
                   )}
                 </div>
-                <div id="payment-element" style={{ minHeight: '50px' }}></div>
+                <div id="payment-element" ref={cardRef} style={{ minHeight: '50px' }}></div>
               </div>
             )}
 

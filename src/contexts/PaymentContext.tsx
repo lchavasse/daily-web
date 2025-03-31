@@ -15,7 +15,7 @@ interface PaymentContextType {
   clientSecret: string | null;
   stripePromise: Stripe | null;
   createSetupIntent: () => Promise<{ clientSecret: string }>;
-  confirmSetupIntent: (paymentMethodId: string) => Promise<{ success: boolean; data: any }>;
+  confirmSetupIntent: (paymentMethodId: string, name?: string, email?: string) => Promise<{ success: boolean; data: any }>;
   createSubscription: (name: string, email?: string) => Promise<{ clientSecret: string; isSetupIntent?: boolean } | null>;
   createCheckoutSession: () => Promise<{ clientSecret: string }>;
   updateUserProfile: (name: string, email: string) => Promise<boolean>;
@@ -134,12 +134,12 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return { clientSecret: data.clientSecret };
   };
 
-  const confirmSetupIntent = async (paymentMethodId: string) => {
+  const confirmSetupIntent = async (paymentMethodId: string, name?: string, email?: string) => {
     try {
       const response = await fetch(`${webhookServerUrl}/api/stripe/confirm-subscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentMethodId }),
+        body: JSON.stringify({ paymentMethodId, name, email }),
       });
       const data = await response.json();
       if (data.status === 'active') {

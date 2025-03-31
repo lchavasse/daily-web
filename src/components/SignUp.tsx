@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -21,6 +21,55 @@ const formSchema = z.object({
   email: z.string().email('Please enter a valid email'),
 });
 
+// Custom hook to mount Stripe elements safely
+const useMountStripeElement = (stripe, elements, clientSecret, elementType, selector, onReady) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (!stripe || !elements || !clientSecret || mounted) return;
+
+    let retries = 0;
+    const maxRetries = 10;
+    const retryDelay = 100; // ms
+
+    const mountElement = () => {
+      const domElement = document.querySelector(selector);
+      if (!domElement) {
+        if (retries < maxRetries) {
+          retries++;
+          setTimeout(mountElement, retryDelay);
+          return;
+        }
+        console.error(`Failed to find ${selector} after ${maxRetries} retries`);
+        return;
+      }
+
+      try {
+        const element = elements.create(elementType, elementType === 'expressCheckout' ? {
+          buttonTheme: { googlePay: 'black', applePay: 'white' },
+        } : {
+          fields: { billingDetails: { name: 'never', email: 'never' } },
+        });
+        element.mount(selector);
+        element.on('ready', () => {
+          setMounted(true);
+          onReady();
+        });
+
+        return () => {
+          element.unmount();
+        };
+      } catch (error) {
+        console.error(`Error mounting ${elementType}:`, error);
+      }
+    };
+
+    mountElement();
+  }, [stripe, elements, clientSecret, elementType, selector, mounted, onReady]);
+
+  return mounted;
+};
+
 // Combined Payment Form Component
 const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) => {
   const { createSetupIntent, confirmSetupIntent } = usePayment();
@@ -31,8 +80,24 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [elementReady, setElementReady] = useState({ express: false, card: false });
   const [useCard, setUseCard] = useState(false);
+
+  const expressReady = useMountStripeElement(
+    stripe,
+    elements,
+    clientSecret,
+    'expressCheckout',
+    '#express-checkout',
+    () => setIsLoading(false)
+  );
+  const cardReady = useMountStripeElement(
+    stripe,
+    elements,
+    clientSecret,
+    'payment',
+    '#payment-element',
+    () => {}
+  );
 
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -42,14 +107,12 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
     },
   });
 
-  // Update form with user email
   useEffect(() => {
     if (user?.email) {
       setValue('email', user.email);
     }
   }, [user, setValue]);
 
-  // Initialize payment
   useEffect(() => {
     let isMounted = true;
 
@@ -82,38 +145,6 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
       isMounted = false;
     };
   }, [stripe, createSetupIntent]);
-
-  // Mount Elements
-  useEffect(() => {
-    if (!stripe || !elements || !clientSecret) return;
-
-    const expressCheckoutElement = elements.create('expressCheckout', {
-      buttonTheme: { googlePay: 'black', applePay: 'white' },
-    });
-    expressCheckoutElement.mount('#express-checkout');
-    expressCheckoutElement.on('ready', () => {
-      setElementReady((prev) => ({ ...prev, express: true }));
-      setIsLoading(false);
-    });
-
-    const paymentElement = elements.create('payment', {
-      fields: {
-        billingDetails: {
-          name: 'never',
-          email: 'never',
-        },
-      },
-    });
-    paymentElement.mount('#payment-element');
-    paymentElement.on('ready', () => {
-      setElementReady((prev) => ({ ...prev, card: true }));
-    });
-
-    return () => {
-      expressCheckoutElement.unmount();
-      paymentElement.unmount();
-    };
-  }, [stripe, elements, clientSecret]);
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     if (!stripe || !elements || !clientSecret) return;
@@ -153,7 +184,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
             useCard ? data.name : confirmResult.data.name,
             useCard ? data.email : confirmResult.data.email
           );
-          navigate('/success'); // Or wherever you want to go
+          navigate('/success');
         } else {
           setError(confirmResult.data);
         }
@@ -279,7 +310,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
               style={{ backgroundColor: '#FFA9CC', color: '#502220' }}
               onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#E880AA')}
               onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#FFA9CC')}
-              disabled={!stripe || isLoading || (!elementReady.express && !elementReady.card)}
+              disabled={!stripe || isLoading || (!expressReady && !cardReady)}
             >
               {isLoading ? (
                 <>

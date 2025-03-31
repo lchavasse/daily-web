@@ -27,87 +27,157 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
   const { createSetupIntent, confirmSetupIntent } = usePayment();
   const stripe = useStripe();
   const elements = useElements();
+  const { user } = useAuth();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
-  const [elementReady, setElementReady] = useState(false); // Track when element mounts
-  const [error, setError] = useState<string | null>(null); // Track any errors
-  const { user } = useAuth();
+  const [elementReady, setElementReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Always call useForm at the top level, no matter what the component will render
+  const { register, handleSubmit, formState: { errors }, setValue } = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      email: user?.email || '',
+    },
+  });
 
+  // Effect to update form values when user changes
   useEffect(() => {
-    const initializePayment = async () => {
-      // PROBLEM: This check is insufficient. `stripe` might be null initially, but the effect runs anyway because `clientSecret` and `initialized` change later.
-      // FIX: Move the stripe check outside the async function to prevent the effect from running prematurely.
-      if (!stripe || clientSecret || initialized) return; // Only run if stripe is ready and we haven’t initialized yet
+    if (user?.email) {
+      setValue('email', user.email);
+    }
+  }, [user, setValue]);
 
+  // Initialize payment - get client secret
+  useEffect(() => {
+    let isMounted = true;
+    
+    const initializePayment = async () => {
+      if (!stripe || initialized) return;
+      
       setInitialized(true);
       try {
         const result = await createSetupIntent();
         console.log('result: ', result);
-        if (result?.clientSecret) {
+        if (result?.clientSecret && isMounted) {
           setClientSecret(result.clientSecret);
         }
       } catch (error) {
         console.error('Failed to initialize payment:', error);
-        toast.error('Failed to initialize payment');
+        if (isMounted) {
+          toast.error('Failed to initialize payment');
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     
     initializePayment();
-    // PROBLEM: Dependencies include `clientSecret` and `initialized`, which change in this effect, causing it to re-run unnecessarily and potentially after unmount.
-    // FIX: Only depend on `stripe` to ensure this runs once when Stripe is ready.
-  }, [stripe]); // Changed dependencies
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [stripe, createSetupIntent, initialized]);
 
-  // Separate useEffect to mount Express Checkout element
+  // Mount Express Checkout element
   useEffect(() => {
-    let mounted = true; // Track mount state to avoid updates after unmount
+    let isMounted = true;
     let expressCheckoutElement;
-
-    // PROBLEM: This runs too eagerly and might try to mount before `clientSecret` is set or after unmount.
-    // FIX: Add guards and proper cleanup.
-    if (!stripe || !elements || !clientSecret || elementReady) return;
-
-    try {
-      expressCheckoutElement = elements.create('expressCheckout');
-      const mountElement = () => {
+    
+    const mountElement = () => {
+      if (!stripe || !elements || !clientSecret || elementReady || !isMounted) return;
+      
+      try {
         const domElement = document.getElementById('express-checkout');
         if (!domElement) {
-          console.error('Express checkout DOM element not found, will retry');
+          // Try again in a bit if the DOM element isn't ready
           setTimeout(mountElement, 100);
           return;
+        }
+        
+        // Only create the element if we haven't already
+        if (!expressCheckoutElement && elements) {
+          try {
+            expressCheckoutElement = elements.create('expressCheckout');
+          } catch (createError) {
+            console.error('Error creating express checkout element:', createError);
+            if (isMounted) setError('Failed to create payment form');
+            return;
+          }
         }
         
         try {
           expressCheckoutElement.mount('#express-checkout');
           expressCheckoutElement.on('ready', () => {
-            if (mounted) setElementReady(true); // Guard against updates after unmount
+            if (isMounted) setElementReady(true);
           });
           console.log('Express checkout element mounted successfully');
         } catch (mountError) {
           console.error('Error mounting express checkout element:', mountError);
-          if (mounted) setError('Failed to mount payment form');
+          if (isMounted) setError('Failed to mount payment form');
         }
-      };
-      
+      } catch (error) {
+        console.error('Unexpected error in mountElement:', error);
+        if (isMounted) setError('An unexpected error occurred');
+      }
+    };
+    
+    if (stripe && elements && clientSecret && !elementReady) {
       mountElement();
-    } catch (error) {
-      console.error('Error creating express checkout element:', error);
-      if (mounted) setError('Failed to initialize payment form');
     }
-
-    // FIX: Add cleanup to prevent memory leaks and invalid operations
+    
     return () => {
-      mounted = false;
+      isMounted = false;
       if (expressCheckoutElement) {
-        expressCheckoutElement.unmount();
-        expressCheckoutElement.destroy();
+        try {
+          expressCheckoutElement.unmount();
+        } catch (e) {
+          console.error('Error unmounting element:', e);
+        }
       }
     };
   }, [stripe, elements, clientSecret, elementReady]);
 
-  // PROBLEM: These early returns happen before hooks like `useForm` are called, which is fine, but we need to ensure all hooks are called consistently.
+  // Form submission handler
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    if (!stripe || !elements || !clientSecret) return;
+    
+    setIsLoading(true);
+    try {
+      const result = await stripe.confirmSetup({
+        elements,
+        clientSecret,
+        confirmParams: {
+          return_url: window.location.origin + '/success',
+        },
+        redirect: 'if_required',
+      });
+
+      if (result.error) {
+        setError(result.error.message);
+      } else {
+        const paymentMethodId = result.setupIntent.payment_method;
+        const confirmResult = await confirmSetupIntent(paymentMethodId as string);
+        if (confirmResult.success) {
+          console.log('Subscription created:', confirmResult.data.subscriptionId);
+          // Success handling here
+        } else {
+          setError(confirmResult.data);
+        }
+      }
+    } catch (submitError) {
+      console.error('Error during submission:', submitError);
+      setError('An unexpected error occurred during payment submission');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Render loading state
   if (!stripe || isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -116,6 +186,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
     );
   }
 
+  // Render error state if client secret couldn't be obtained
   if (!clientSecret) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -126,49 +197,8 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
       </div>
     );
   }
-  
-  const { register, handleSubmit, formState: { errors }, setValue } = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: '',
-      email: user?.email || '',
-    },
-  });
 
-  useEffect(() => {
-    if (user?.email) {
-      setValue('email', user.email);
-    }
-  }, [user, setValue]);
-
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    if (!stripe || !elements || !clientSecret) return;
-    
-    setIsLoading(true);
-    const result = await stripe.confirmSetup({
-      elements,
-      clientSecret,
-      confirmParams: {
-        return_url: window.location.origin + '/success',
-      },
-      redirect: 'if_required',
-    });
-
-    if (result.error) {
-      setError(result.error.message);
-    } else {
-      const paymentMethodId = result.setupIntent.payment_method;
-      const confirmResult = await confirmSetupIntent(paymentMethodId as string);
-      if (confirmResult.success) {
-        console.log('Subscription created:', confirmResult.data.subscriptionId);
-        // TODO: Navigate to success page or update UI
-      } else {
-        setError(confirmResult.data);
-      }
-    }
-    setIsLoading(false); // Moved outside to ensure it’s always reset
-  };
-
+  // Render the main form
   return (
     <Card className="w-full daily-card-contrast relative payment-card">
       {onBackClick && (
@@ -184,7 +214,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
       <CardHeader>
         <CardTitle>Subscribe to daily.</CardTitle>
         <CardDescription>
-          "Set up your payment method for your 7-day free trial. You won't be charged until the trial ends."
+          Set up your payment method for your 7-day free trial. You won't be charged until the trial ends.
         </CardDescription>
       </CardHeader>
       
@@ -221,6 +251,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
             <div style={{ marginBottom: '20px' }}>
               {!elementReady && !error && <p>Loading payment options...</p>}
               <div id="express-checkout" style={{ minHeight: '50px' }}></div>
+              {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
             </div>
             
             <Button 
@@ -229,10 +260,10 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
               style={{ backgroundColor: '#FFA9CC', color: '#502220' }}
               onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#E880AA'}
               onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#FFA9CC'}
-              disabled={!stripe || isLoading || !elementReady} // Added !elementReady to ensure element is mounted
+              disabled={!stripe || isLoading || !elementReady}
             >
               {isLoading ? (
-                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                <><LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
               ) : 'Subscribe'}
             </Button>
           </div>

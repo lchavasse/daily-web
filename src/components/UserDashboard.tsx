@@ -78,10 +78,8 @@ const UserDashboard: React.FC = () => {
         */}
         
         {activeView === 'tasks' && <TasksView />}
-        {/*
-        {activeView === 'ideas' && <IdeasView />}
+        {/* activeView === 'ideas' && <IdeasView />*/}
         {activeView === 'journal' && <JournalView />}
-        */}
       </div>
     </div>
   );

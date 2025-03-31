@@ -373,25 +373,103 @@ export async function toggleTaskImportance(
   return updateUserTask(userId, taskId, { important: !currentStatus });
 }
 
-export async function getJournalEntries(): Promise<JournalEntry[]> {
-  // Mock implementation for now
-  return [
-    {
-      id: '1',
-      date: '2023-06-01',
-      content: 'Made significant progress on the launch preparations today.'
-    },
-    {
-      id: '2',
-      date: '2023-06-02',
-      content: 'Had a productive meeting with the design team.'
-    },
-    {
-      id: '3',
-      date: '2023-06-03',
-      content: 'Resolved several technical issues with the AI model.'
+export async function getJournalEntries(userId: string): Promise<JournalEntry[]> {
+  try {
+    if (!userId) {
+      console.error('User ID is required to fetch journal entries');
+      return [];
     }
-  ];
+
+    // Use timestamp-based approach for more reliable date calculation
+    const now = new Date();
+    
+    // Create end date (today)
+    const end_date = new Date(now);
+    
+    // Create start date (10 days ago) using timestamp arithmetic
+    // 1 day = 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+    const start_date = new Date(now.getTime() - (9 * millisecondsPerDay));
+    
+    console.log('End date timestamp:', end_date.getTime());
+    console.log('Start date timestamp:', start_date.getTime());
+    console.log('Difference in days:', (end_date.getTime() - start_date.getTime()) / millisecondsPerDay);
+    
+    // Format dates with explicit method
+    const formattedStartDate = `${start_date.getFullYear()}-${String(start_date.getMonth() + 1).padStart(2, '0')}-${String(start_date.getDate()).padStart(2, '0')}`;
+    const formattedEndDate = `${end_date.getFullYear()}-${String(end_date.getMonth() + 1).padStart(2, '0')}-${String(end_date.getDate()).padStart(2, '0')}`;
+    
+    console.log('Formatted start date:', formattedStartDate);
+    console.log('Formatted end date:', formattedEndDate);
+    
+    // Create the payload with explicit property naming
+    const payload = { 
+      userId: userId,
+      start_date: formattedStartDate,
+      end_date: formattedEndDate
+    };
+    
+    console.log('Full request payload:', payload);
+    
+    // Make the API request
+    const response = await fetch(`${BASE_URL}/dev/user/diary/fetch`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    
+    // Log raw response for debugging
+    console.log('API response status:', response.status);
+    
+    if (!response.ok) {
+      console.error('Failed to fetch journal entries:', response.status);
+      return [];
+    }
+    
+    const data = await response.json();
+    console.log('Journal entries response:', data);
+    
+    if (data.success && Array.isArray(data.data)) {
+      // Process each entry to extract content from encrypted_entry
+      const processedEntries = data.data.map(entry => {
+        try {
+          // Check if entry has encrypted_entry field
+          if (entry.encrypted_entry) {
+            // Parse the encrypted_entry JSON string
+            const parsedEntry = JSON.parse(entry.encrypted_entry);
+            
+            // Create a new entry with content from the parsed data
+            return {
+              id: entry.id,
+              date: parsedEntry.date || entry.date,
+              content: parsedEntry.content || 'No content available'
+            };
+          }
+          
+          // If no encrypted_entry, return the original
+          return entry;
+        } catch (error) {
+          console.error('Error parsing entry:', error, entry);
+          // Return entry with default content if parsing fails
+          return {
+            id: entry.id,
+            date: entry.date,
+            content: 'Error parsing entry content'
+          };
+        }
+      });
+      
+      return processedEntries;
+    } else {
+      console.error('Invalid response format for journal entries:', data);
+      return [];
+    }
+  } catch (error) {
+    console.error('Error fetching journal entries:', error);
+    return [];
+  }
 }
 
 export async function requestCall(phone: string): Promise<{ success: boolean }> {
@@ -546,5 +624,69 @@ export async function verifyOtp(
   } catch (error) {
     console.error('Error verifying OTP:', error);
     return { success: false, error: 'Network error when verifying OTP' };
+  }
+}
+
+export async function saveJournalEntry(
+  userId: string,
+  date: string, 
+  content: string,
+  entryId?: string // Keeping parameter for backwards compatibility
+): Promise<{ success: boolean; data?: JournalEntry; error?: string }> {
+  try {
+    if (!userId) {
+      console.error('User ID is required to save a journal entry');
+      return { success: false, error: 'User ID is required' };
+    }
+    
+    // Create the request payload - the server uses user_id and date as the unique key
+    const payload = { 
+      userId,
+      date,
+      entry: content
+    };
+    
+    console.log('Saving journal entry:', payload);
+    
+    // Make the API request
+    const response = await fetch(`${BASE_URL}/dev/user/diary`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    
+    // Log raw response for debugging
+    console.log('API response status:', response.status);
+    
+    if (!response.ok) {
+      console.error('Failed to save journal entry:', response.status);
+      return { success: false, error: 'Failed to save journal entry' };
+    }
+    
+    const data = await response.json();
+    console.log('Save journal entry response:', data);
+    
+    if (data.success) {
+      // Return a properly formatted journal entry
+      return { 
+        success: true, 
+        data: {
+          id: data.data?.id || `${userId}-${date}`, // Create a consistent ID if none is returned
+          date,
+          content
+        }
+      };
+    } else {
+      console.error('Failed to save journal entry:', data.error);
+      return { 
+        success: false, 
+        error: data.error || 'Failed to save journal entry' 
+      };
+    }
+  } catch (error) {
+    console.error('Error saving journal entry:', error);
+    return { success: false, error: 'Network error when saving journal entry' };
   }
 }

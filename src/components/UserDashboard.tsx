@@ -41,7 +41,7 @@ const UserDashboard: React.FC = () => {
   }, [userId]);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in flex flex-col items-center zindex-10">
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in flex flex-col items-center zindex-10 px-4">
 
       {/* Tab navigation and content */}
       <div className="daily-card w-full mx-8">

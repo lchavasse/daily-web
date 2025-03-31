@@ -13,7 +13,9 @@ interface PaymentContextType {
   subscriptionId: string | null;
   currentPeriodEnd: number | null;
   clientSecret: string | null;
-  stripe: Stripe | null;
+  stripePromise: Stripe | null;
+  createSetupIntent: () => Promise<{ clientSecret: string }>;
+  confirmSetupIntent: (paymentMethodId: string) => Promise<{ success: boolean; data: any }>;
   createSubscription: (name: string, email?: string) => Promise<{ clientSecret: string; isSetupIntent?: boolean } | null>;
   createCheckoutSession: () => Promise<{ clientSecret: string }>;
   updateUserProfile: (name: string, email: string) => Promise<boolean>;
@@ -39,7 +41,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
   const [currentPeriodEnd, setCurrentPeriodEnd] = useState<number | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [stripe, setStripe] = useState<Stripe | null>(null);
+  const [stripePromise, setStripePromise] = useState<Stripe | null>(null);
   const [customerId, setCustomerId] = useState<string | null>(null);
 
   // Initialize Stripe
@@ -66,7 +68,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         if (stripeInstance) {
           console.log('✅ Stripe initialized successfully');
-          setStripe(stripeInstance);
+          setStripePromise(stripeInstance);
         } else {
           console.error('❌ Stripe initialized but returned null instance');
         }
@@ -114,6 +116,38 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       toast.error('Failed to fetch subscription status');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Create a setup intent
+  const createSetupIntent = async () => {
+    const response = await fetch(`${webhookServerUrl}/api/stripe/create-setup-intent`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    const data = await response.json();
+    setClientSecret(data.clientSecret);
+    return { clientSecret: data.clientSecret };
+  };
+
+  const confirmSetupIntent = async (paymentMethodId: string) => {
+    try {
+      const response = await fetch(`${webhookServerUrl}/api/stripe/confirm-subscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentMethodId }),
+      });
+      const data = await response.json();
+      if (data.status === 'active') {
+        console.log('Subscription created:', data.subscriptionId);
+        return { success: true, data: data };
+      } else {
+        return { success: false, data: data.error };
+      }
+    } catch (err) {
+      return { success: false, data: err.message };
     }
   };
 
@@ -339,7 +373,9 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     subscriptionId,
     currentPeriodEnd,
     clientSecret,
-    stripe,
+    stripePromise,
+    createSetupIntent,
+    confirmSetupIntent,
     createSubscription,
     createCheckoutSession,
     updateUserProfile,

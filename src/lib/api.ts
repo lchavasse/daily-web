@@ -690,3 +690,65 @@ export async function saveJournalEntry(
     return { success: false, error: 'Network error when saving journal entry' };
   }
 }
+
+/**
+ * Updates a user profile with the provided data
+ */
+export async function updateUserProfile(
+  userId: string,
+  profileData: Partial<{
+    name: string;
+    email: string;
+    phone: string;
+    start_q: string;
+    notes: string;
+  }>
+): Promise<{ success: boolean; data?: UserProfile; error?: string }> {
+  try {
+    if (!userId) {
+      console.error('User ID is required to update a profile');
+      return { success: false, error: 'User ID is required' };
+    }
+    
+    const payload = {
+      userId,
+      ...profileData
+    };
+    
+    console.log('Updating user profile:', payload);
+    
+    const response = await fetch(`${BASE_URL}/dev/user/profile/update`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    
+    console.log('Profile update response status:', response.status);
+    
+    if (!response.ok) {
+      console.error('Failed to update profile:', response.status);
+      return { success: false, error: 'Failed to update user profile' };
+    }
+    
+    const data = await response.json();
+    console.log('Profile update response:', data);
+    
+    if (data.success) {
+      return { 
+        success: true, 
+        data: data.data
+      };
+    } else {
+      console.error('Failed to update profile:', data.error);
+      return { 
+        success: false, 
+        error: data.error || 'Failed to update user profile' 
+      };
+    }
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    return { success: false, error: 'Network error when updating user profile' };
+  }
+}

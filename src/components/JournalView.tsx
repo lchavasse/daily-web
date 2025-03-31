@@ -36,19 +36,36 @@ const JournalView: React.FC = () => {
         console.log('Journal entries received:', data);
         
         setEntries(data);
-        if (data.length > 0) {
-          console.log('Setting selected entry:', data[0]);
-          setSelectedEntry(data[0]);
-          setNewContent(data[0].content);
+        
+        // After setting entries, select today's date
+        const today = new Date();
+        const todayEntry = data.find(entry => 
+          new Date(entry.date).toDateString() === today.toDateString()
+        );
+        
+        if (todayEntry) {
+          console.log('Found entry for today:', todayEntry);
+          setSelectedEntry(todayEntry);
+          setNewContent(todayEntry.content);
+          setEditMode(false);
         } else {
-          console.log('No journal entries found');
+          console.log('No entry found for today, creating a new one');
+          // Create a new entry for today
+          const formattedDate = today.toISOString().split('T')[0];
+          const newEntry = {
+            id: `${user?.id || 'new'}-${formattedDate}`,
+            date: formattedDate,
+            content: ''
+          };
+          setSelectedEntry(newEntry);
+          setNewContent('');
+          setEditMode(true); // Automatically enter edit mode for new entries
         }
       } catch (error) {
         console.error('Error fetching journal entries:', error);
         toast.error('Failed to load journal entries');
       } finally {
         setIsLoading(false);
-        selectDate(new Date());
       }
     };
 

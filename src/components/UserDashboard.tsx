@@ -3,6 +3,7 @@ import { ArrowRight, Phone } from 'lucide-react';
 import TasksView from './TasksView';
 import IdeasView from './IdeasView';
 import JournalView from './JournalView';
+import NotesView from './NotesView';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   fetchUserProfileForDashboard, 
@@ -44,7 +45,10 @@ const UserDashboard: React.FC = () => {
 
       {/* Tab navigation and content */}
       <div className="daily-card w-full mx-8">
-      <h2 className="text-md font-medium mb-4">Hi {user?.name || 'there'}, how have you been..?</h2>
+      <h2 className="text-md font-medium mb-0">Hi {user?.name || 'there'}, how have you been..?</h2>
+      <div className="text-sm text-gray-400 mb-4">
+        <h3 className="italic text-sm text-[#502220]">this dashboard is being rapidly developed. Please see our <a className="underline" href="/about" target="_blank" rel="noopener noreferrer">roadmap</a> for details...</h3>
+      </div>
         <div className="flex rounded-lg overflow-hidden mb-6">
           <button
             onClick={() => setActiveView('tasks')}
@@ -60,7 +64,7 @@ const UserDashboard: React.FC = () => {
               activeView === 'ideas' ? 'bg-daily-tab text-white' : 'bg-transparent text-white'
             }`}
           >
-            ideas
+            notes
           </button>
           <button
             onClick={() => setActiveView('journal')}
@@ -78,7 +82,7 @@ const UserDashboard: React.FC = () => {
         */}
         
         {activeView === 'tasks' && <TasksView />}
-        {/* activeView === 'ideas' && <IdeasView />*/}
+        {activeView === 'ideas' && <NotesView />}
         {activeView === 'journal' && <JournalView />}
       </div>
     </div>

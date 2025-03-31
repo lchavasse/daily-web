@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { getIdeas, Idea } from '@/lib/api';
+// import { getIdeas, Idea } from '@/lib/api';
 import { X, Edit, Save } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 

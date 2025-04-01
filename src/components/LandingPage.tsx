@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { requestCall } from '@/lib/api';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { SignUp } from './SignUp';
+import SignUp from './SignUp';
 
 
 const LandingPage: React.FC = () => {
@@ -79,7 +79,7 @@ const LandingPage: React.FC = () => {
   // Content for the details/form section
   const renderDetailsContent = () => {
     if (isSignUp) {
-      return <SignUp onBackClick={() => setIsSignUp(false)}/>;
+      return <SignUp /> // <SignUp onBackClick={() => setIsSignUp(false)}/>;
     }
     
     return (

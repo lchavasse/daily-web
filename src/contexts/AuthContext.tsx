@@ -100,22 +100,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         const mappedUser = session ? mapSupabaseUser(session.user) : null;
         setUser(mappedUser);
-        
-        // Add profile check when a user signs in or session is refreshed
-        if (mappedUser && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-          console.log('User has phone, checking profile');
-          if (mappedUser.phone) {
-            // Remove the '+' from the phone number if it exists
-            const phoneNumber = mappedUser.phone.replace(/^\+/, '');
-            console.log('Checking account status for phone:', phoneNumber);
-            
-            // Check profile with the phone number
-            const { status, name } = await checkForProfile(phoneNumber);
-            console.log('Setting account status to:', status);
-            setAccount(status);
-          }
-        }
-        
         setIsLoading(false);
       }
     );

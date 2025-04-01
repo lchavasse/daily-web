@@ -67,9 +67,28 @@ const Settings = () => {
     if (user) {
       setEmail(user.email || '');
       setPhone(user.phone || '');
-      getUser(user.id).then((user) => {
-        setPreferredVoice(user.data?.voice || 'default');
-      });
+      
+      // Fetch the complete user data to get the voice preference
+      if (user.id) {
+        console.log('Fetching user data for voice preference...');
+        getUser(user.id)
+          .then((response) => {
+            console.log('User data response:', response);
+            if (response.success && response.data) {
+              const voiceValue = response.data.voice;
+              console.log('Retrieved voice preference:', voiceValue);
+              setPreferredVoice(voiceValue || 'default');
+            } else {
+              console.error('Failed to get user voice preference:', response.error);
+              // Fallback to default voice if we couldn't fetch the data
+              setPreferredVoice('default');
+            }
+          })
+          .catch((error) => {
+            console.error('Error fetching user data for voice preference:', error);
+            setPreferredVoice('default');
+          });
+      }
     }
   }, [user]);
 
@@ -121,24 +140,29 @@ const Settings = () => {
   const handleVoiceChange = async (value: string) => {
     if (!user) return;
     
+    // Update UI immediately for better user experience
+    const previousVoice = preferredVoice;
     setPreferredVoice(value);
     setIsSavingVoice(true);
     
     try {
+      // Call the API with the field name 'voice'
       const result = await updateUser(user.id, 'voice', value);
       
       if (result.success) {
+        console.log('Voice preference updated successfully');
         toast.success('Voice preference updated');
       } else {
+        console.error('Failed to update voice preference:', result.error);
         toast.error(result.error || 'Failed to update voice preference');
         // Revert to previous value if there was an error
-        setPreferredVoice((user as ExtendedUser)?.preferredVoice || 'default');
+        setPreferredVoice(previousVoice);
       }
     } catch (error) {
       console.error('Error updating voice preference:', error);
       toast.error('Failed to update voice preference');
       // Revert to previous value if there was an error
-      setPreferredVoice((user as ExtendedUser)?.preferredVoice || 'default');
+      setPreferredVoice(previousVoice);
     } finally {
       setIsSavingVoice(false);
     }

@@ -761,6 +761,13 @@ export async function updateUserProfile(
 
 export async function getUser(userId: string): Promise<{ success: boolean, data?: User, error?: string }> {
   try {
+    if (!userId) {
+      console.error('User ID is required to get user data');
+      return { success: false, error: 'User ID is required' };
+    }
+    
+    console.log(`Fetching user data for ID: ${userId}`);
+    
     const response = await fetch(`${BASE_URL}/dev/user/get`, {
       method: 'POST',
       headers: {
@@ -768,18 +775,50 @@ export async function getUser(userId: string): Promise<{ success: boolean, data?
       },
       body: JSON.stringify({ userId }),
     });
-
+    
+    console.log('Get user API response status:', response.status);
+    
+    if (!response.ok) {
+      console.error('Failed to get user data:', response.status);
+      return { success: false, error: 'Failed to get user data' };
+    }
+    
     const data = await response.json();
-    return data;
+    console.log('Get user API response data:', data);
+    
+    if (data.success) {
+      // Ensure we're returning a properly structured User object
+      return { 
+        success: true, 
+        data: {
+          user_id: data.data.user_id || userId,
+          email: data.data.email || '',
+          phone: data.data.phone || '',
+          voice: data.data.voice || 'default'
+        }
+      };
+    } else {
+      console.error('Failed to get user data:', data.error);
+      return { 
+        success: false, 
+        error: data.error || 'Failed to get user data' 
+      };
+    }
   } catch (error) {
     console.error('Error getting user:', error);
     return { success: false, error: 'Network error when getting user' };
   }
 }
 
-
 export async function updateUser(userId: string, field: string, value: string): Promise<{ success: boolean, error?: string }> {
   try {
+    if (!userId) {
+      console.error('User ID is required to update user data');
+      return { success: false, error: 'User ID is required' };
+    }
+    
+    console.log(`Updating user ${userId} field: ${field} to value: ${value}`);
+    
     const response = await fetch(`${BASE_URL}/dev/user/update`, {
       method: 'POST',
       headers: {
@@ -791,9 +830,21 @@ export async function updateUser(userId: string, field: string, value: string): 
         value
       }),
     });
-
+    
+    console.log('Update user API response status:', response.status);
+    
+    if (!response.ok) {
+      console.error('Failed to update user data:', response.status);
+      return { success: false, error: 'Failed to update user data' };
+    }
+    
     const data = await response.json();
-    return data;
+    console.log('Update user API response data:', data);
+    
+    return {
+      success: data.success,
+      error: data.error || undefined
+    };
   } catch (error) {
     console.error('Error updating user:', error);
     return { success: false, error: 'Network error when updating user' };

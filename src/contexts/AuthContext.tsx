@@ -167,6 +167,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name = data.name;
           console.log('Closed profile found with name:', name);
         }
+      } else if (data.account === 'phone') {
+        console.log('Phone profile found');
+        result = 'phone';
+        if (data.first_name) {
+          name = data.first_name;
+          console.log('Phone profile found with first name:', name);
+        } else if (data.name) {
+          name = data.name;
+          console.log('Phone profile found with name:', name);
+        }
       }
 
       // Don't try to update user directly here as user might be null

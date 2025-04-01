@@ -79,7 +79,7 @@ const LandingPage: React.FC = () => {
   // Content for the details/form section
   const renderDetailsContent = () => {
     if (isSignUp) {
-      return <SignUp /> // <SignUp onBackClick={() => setIsSignUp(false)}/>;
+      return <SignUp onBackClick={() => setIsSignUp(false)}/>;
     }
     
     return (

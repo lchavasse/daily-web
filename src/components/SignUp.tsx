@@ -207,7 +207,7 @@ const StripePaymentForm: React.FC<{ clientSecret: string }> = ({ clientSecret })
   const [message, setMessage] = useState<string | null>(null);
   const [stripeError, setStripeError] = useState<any>(null);
   const { user, setAccount } = useAuth();
-  
+
   useEffect(() => {
     if (!stripe || !elements) {
       console.log('Stripe or Elements not available yet');
@@ -236,7 +236,7 @@ const StripePaymentForm: React.FC<{ clientSecret: string }> = ({ clientSecret })
     checkElements();
   }, [stripe, elements]);
   
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!stripe || !elements) {
@@ -280,7 +280,7 @@ const StripePaymentForm: React.FC<{ clientSecret: string }> = ({ clientSecret })
   };
   
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handlePaymentSubmit}>
       <CardContent className="space-y-4 pt-4">
         <div className="mb-4">
           <h3 className="font-medium mb-1">Subscription Details</h3>

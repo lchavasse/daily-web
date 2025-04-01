@@ -206,6 +206,7 @@ const StripePaymentForm: React.FC<{ clientSecret: string }> = ({ clientSecret })
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [stripeError, setStripeError] = useState<any>(null);
+  const { user, setAccount } = useAuth();
   
   useEffect(() => {
     if (!stripe || !elements) {
@@ -248,7 +249,7 @@ const StripePaymentForm: React.FC<{ clientSecret: string }> = ({ clientSecret })
     
     try {
       console.log('Confirming payment with clientSecret:', clientSecret);
-      const { error, paymentIntent } = await stripe.confirmPayment({
+      const { error, setupIntent } = await stripe.confirmSetup({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/dashboard?payment_success=true`,
@@ -262,42 +263,10 @@ const StripePaymentForm: React.FC<{ clientSecret: string }> = ({ clientSecret })
         return;
       }
       
-      if (paymentIntent && paymentIntent.status === 'succeeded') {
-        // Send webhook to your server
-        try {
-          // Get the current user info from Auth context
-          const { user, updateAccount } = useAuth();
-          const webhookServerUrl = import.meta.env.VITE_WEBHOOK_SERVER_URL || 'http://localhost:3000';
-
-          updateAccount('closed') // Change account to closed in local context as per webserver.
-          
-          // Send webhook to your server
-          const webhookResponse = await fetch(`${webhookServerUrl}/api/payment/webhook`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              event: 'payment.succeeded',
-              paymentIntentId: paymentIntent.id,
-              // Use only fields available on PaymentIntent
-              status: paymentIntent.status,
-              userId: user?.id, // Use id instead of uid
-            }),
-          });
-          
-          if (!webhookResponse.ok) {
-            console.error('Webhook notification failed, but payment was successful');
-          } else {
-            console.log('Webhook notification sent successfully');
-          }
-        } catch (webhookError) {
-          // Log webhook error but don't interrupt the flow
-          console.error('Error sending webhook:', webhookError);
-        }
-        
-        toast.success('Payment successful!');
-        navigate('/dashboard?payment_success=true');
+      if (setupIntent && setupIntent.status === 'succeeded') {
+        console.log('Payment successful');
+        setAccount('closed')
+        navigate('/dashboard');
       } else {
         setMessage('Payment processing');
       }
@@ -306,6 +275,7 @@ const StripePaymentForm: React.FC<{ clientSecret: string }> = ({ clientSecret })
       setMessage(error.message || 'An error occurred');
     } finally {
       setLoading(false);
+
     }
   };
   

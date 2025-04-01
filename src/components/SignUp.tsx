@@ -66,26 +66,26 @@ const DetailsForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
   };
 
   return (
-    <Card className="w-full daily-card-contrast relative">
+    <Card className="w-full daily-card-contrast relative max-h-[90vh] flex flex-col">
       {/* Back button at top right */}
       {onBackClick && (
         <button 
           onClick={onBackClick}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-black/5 transition-colors"
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-black/5 transition-colors z-10"
           title="Go back"
         >
           <ArrowLeft size={20} />
         </button>
       )}
       
-      <CardHeader>
+      <CardHeader className="flex-shrink-0">
         <CardTitle>Subscribe to daily.</CardTitle>
         <CardDescription>
           Get unlimited access to daily. with our monthly subscription.
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="space-y-4 pt-4">
+      <CardContent className="space-y-4 pt-4 overflow-auto">
         
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4 mt-0">
@@ -151,19 +151,19 @@ const SignUpForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) => 
   };
   
   return (
-    <Card className="w-full daily-card-contrast relative">
+    <Card className="w-full daily-card-contrast relative max-h-[90vh] flex flex-col">
       {/* Back button at top right */}
       {onBackClick && (
         <button 
           onClick={onBackClick}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-black/5 transition-colors"
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-black/5 transition-colors z-10"
           title="Go back"
         >
           <ArrowLeft size={20} />
         </button>
       )}
       
-      <CardHeader>
+      <CardHeader className="flex-shrink-0">
         <CardTitle>Subscribe to Daily</CardTitle>
         <CardDescription className="flex justify-between items-center">
           <span>Complete your payment to subscribe to daily.</span>
@@ -181,7 +181,9 @@ const SignUpForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) => 
       </CardHeader>
       
       {clientSecret ? (
-        <StripePaymentForm clientSecret={clientSecret} />
+        <div className="flex-grow overflow-auto">
+          <StripePaymentForm clientSecret={clientSecret} />
+        </div>
       ) : (
         <CardContent className="space-y-4 pt-4">
           <div className="p-4 text-center">
@@ -280,8 +282,8 @@ const StripePaymentForm: React.FC<{ clientSecret: string }> = ({ clientSecret })
   };
   
   return (
-    <form onSubmit={handlePaymentSubmit}>
-      <CardContent className="space-y-4 pt-4">
+    <form onSubmit={handlePaymentSubmit} className="flex flex-col h-full">
+      <CardContent className="space-y-4 pt-4 overflow-y-auto">
         <div className="mb-4">
           <h3 className="font-medium mb-1">Subscription Details</h3>
           <p className="text-sm text-muted-foreground">Monthly subscription - £5/month</p>
@@ -316,7 +318,7 @@ const StripePaymentForm: React.FC<{ clientSecret: string }> = ({ clientSecret })
         </div>
       </CardContent>
       
-      <CardFooter className="flex justify-end">
+      <CardFooter className="flex justify-end mt-auto flex-shrink-0">
         <Button type="submit" disabled={loading || !stripe || !elements || !!stripeError}>
           {loading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
           Pay Now

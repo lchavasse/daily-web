@@ -19,7 +19,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { updateUser } from '@/lib/api';
+import { getUser, updateUser } from '@/lib/api';
 
 // Extend the User type to include preferredVoice
 interface ExtendedUser {
@@ -67,9 +67,9 @@ const Settings = () => {
     if (user) {
       setEmail(user.email || '');
       setPhone(user.phone || '');
-      // Try to get the voice property, fallback to preferredVoice for backward compatibility
-      const userVoice = (user as any).voice || (user as ExtendedUser)?.preferredVoice || 'default';
-      setPreferredVoice(userVoice);
+      getUser(user.id).then((user) => {
+        setPreferredVoice(user.data?.voice || 'default');
+      });
     }
   }, [user]);
 

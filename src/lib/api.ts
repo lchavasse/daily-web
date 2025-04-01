@@ -38,6 +38,12 @@ export interface UserProfile {
   notes: string | null;
 }
 
+export interface User {
+  user_id: string;
+  email: string;
+  phone: string;
+  voice: string;
+}
 export interface Project {
   id: string;
   title: string;
@@ -752,6 +758,25 @@ export async function updateUserProfile(
     return { success: false, error: 'Network error when updating user profile' };
   }
 }
+
+export async function getUser(userId: string): Promise<{ success: boolean, data?: User, error?: string }> {
+  try {
+    const response = await fetch(`${BASE_URL}/dev/user/get`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId }),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error getting user:', error);
+    return { success: false, error: 'Network error when getting user' };
+  }
+}
+
 
 export async function updateUser(userId: string, field: string, value: string): Promise<{ success: boolean, error?: string }> {
   try {

@@ -40,6 +40,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [currentPeriodEnd, setCurrentPeriodEnd] = useState<number | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [stripe, setStripe] = useState<Stripe | null>(null);
+  const [customerId, setCustomerId] = useState<string | null>(null);
 
   // Initialize Stripe
   useEffect(() => {
@@ -161,7 +162,8 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Set the client secret in the context state
       setClientSecret(data.clientSecret);
-      
+      setCustomerId(data.customer_id || null);
+
       // Also log the Stripe publishable key to make sure it matches
       console.log('Using publishable key:', stripePublishableKey);
       
@@ -256,6 +258,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
           user_id: user.id,
           name,
           email,
+          customer_id: customerId,
         }),
       });
 

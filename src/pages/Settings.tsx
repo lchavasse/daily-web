@@ -55,45 +55,92 @@ const Settings = () => {
   // Account settings state
   const [email, setEmail] = useState(user?.email || '');
   const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [isSavingEmail, setIsSavingEmail] = useState(false);
   const [phone, setPhone] = useState(user?.phone || '');
   const [isEditingPhone, setIsEditingPhone] = useState(false);
+  const [isSavingPhone, setIsSavingPhone] = useState(false);
   const [preferredVoice, setPreferredVoice] = useState((user as ExtendedUser)?.preferredVoice || 'default');
+  const [isSavingVoice, setIsSavingVoice] = useState(false);
 
   // Update local state when user data changes
   useEffect(() => {
     if (user) {
       setEmail(user.email || '');
       setPhone(user.phone || '');
-      setPreferredVoice((user as ExtendedUser)?.preferredVoice || 'default');
+      // Try to get the voice property, fallback to preferredVoice for backward compatibility
+      const userVoice = (user as any).voice || (user as ExtendedUser)?.preferredVoice || 'default';
+      setPreferredVoice(userVoice);
     }
   }, [user]);
 
-  // Handle save account settings
-  const handleSaveAccountSettings = async () => {
+  // Handle save email
+  const handleSaveEmail = async () => {
     if (!user) return;
     
-    setIsProcessing(true);
+    setIsSavingEmail(true);
     try {
-      const updates = {
-        email: email || undefined,
-        phone: phone || undefined,
-        preferredVoice
-      };
-      
-      const result = await updateUser(user.id, updates);
+      const result = await updateUser(user.id, 'email', email);
       
       if (result.success) {
-        toast.success('Account settings updated successfully');
+        toast.success('Email updated successfully');
         setIsEditingEmail(false);
-        setIsEditingPhone(false);
       } else {
-        toast.error(result.error || 'Failed to update account settings');
+        toast.error(result.error || 'Failed to update email');
       }
     } catch (error) {
-      console.error('Error updating account settings:', error);
-      toast.error('Failed to update account settings');
+      console.error('Error updating email:', error);
+      toast.error('Failed to update email');
     } finally {
-      setIsProcessing(false);
+      setIsSavingEmail(false);
+    }
+  };
+
+  // Handle save phone
+  const handleSavePhone = async () => {
+    if (!user) return;
+    
+    setIsSavingPhone(true);
+    try {
+      const result = await updateUser(user.id, 'phone', phone);
+      
+      if (result.success) {
+        toast.success('Phone number updated successfully');
+        setIsEditingPhone(false);
+      } else {
+        toast.error(result.error || 'Failed to update phone number');
+      }
+    } catch (error) {
+      console.error('Error updating phone number:', error);
+      toast.error('Failed to update phone number');
+    } finally {
+      setIsSavingPhone(false);
+    }
+  };
+
+  // Handle voice preference change - saves automatically
+  const handleVoiceChange = async (value: string) => {
+    if (!user) return;
+    
+    setPreferredVoice(value);
+    setIsSavingVoice(true);
+    
+    try {
+      const result = await updateUser(user.id, 'voice', value);
+      
+      if (result.success) {
+        toast.success('Voice preference updated');
+      } else {
+        toast.error(result.error || 'Failed to update voice preference');
+        // Revert to previous value if there was an error
+        setPreferredVoice((user as ExtendedUser)?.preferredVoice || 'default');
+      }
+    } catch (error) {
+      console.error('Error updating voice preference:', error);
+      toast.error('Failed to update voice preference');
+      // Revert to previous value if there was an error
+      setPreferredVoice((user as ExtendedUser)?.preferredVoice || 'default');
+    } finally {
+      setIsSavingVoice(false);
     }
   };
 
@@ -249,83 +296,108 @@ const Settings = () => {
                 <div className="text-sm text-muted-foreground">Email:</div>
                 <div className="flex items-center space-x-2">
                   {isEditingEmail ? (
-                    <Input
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="h-8 text-sm"
-                    />
+                    <>
+                      <Input
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="h-8 text-sm"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-green-500"
+                        onClick={handleSaveEmail}
+                        disabled={isSavingEmail}
+                      >
+                        {isSavingEmail ? (
+                          <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Save className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    </>
                   ) : (
-                    <div className="text-sm flex-grow">{email || 'Not available'}</div>
+                    <>
+                      <div className="text-sm flex-grow">{email || 'Not available'}</div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => setIsEditingEmail(!isEditingEmail)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
                   )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => setIsEditingEmail(!isEditingEmail)}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
                 </div>
                 
                 {/* Phone Number Field */}
                 <div className="text-sm text-muted-foreground">Phone Number:</div>
                 <div className="flex items-center space-x-2">
                   {isEditingPhone ? (
-                    <Input
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="h-8 text-sm"
-                      placeholder="Enter phone number"
-                    />
+                    <>
+                      <Input
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="h-8 text-sm"
+                        placeholder="Enter phone number"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-green-500"
+                        onClick={handleSavePhone}
+                        disabled={isSavingPhone}
+                      >
+                        {isSavingPhone ? (
+                          <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Save className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    </>
                   ) : (
-                    <div className="text-sm flex-grow">{phone || 'Not available'}</div>
+                    <>
+                      <div className="text-sm flex-grow">{phone || 'Not available'}</div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => setIsEditingPhone(!isEditingPhone)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
                   )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => setIsEditingPhone(!isEditingPhone)}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
                 </div>
                 
                 {/* Preferred Voice Dropdown */}
                 <div className="text-sm text-muted-foreground">Preferred Voice:</div>
-                <Select value={preferredVoice} onValueChange={setPreferredVoice}>
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="default">Default</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center space-x-2">
+                  <div className="flex-grow">
+                    <Select 
+                      value={preferredVoice} 
+                      onValueChange={handleVoiceChange}
+                      disabled={isSavingVoice}
+                    >
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">Default</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {isSavingVoice && (
+                    <LoaderCircle className="h-3.5 w-3.5 animate-spin text-indigo-500" />
+                  )}
+                </div>
               </div>
               
               <Separator className="my-2" />
               
-              <div className="flex justify-between">
-                <Button 
-                  onClick={handleSaveAccountSettings} 
-                  variant="outline" 
-                  size="sm"
-                  disabled={isProcessing}
-                  className="text-indigo-500"
-                >
-                  {isProcessing ? (
-                    <>
-                      <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-1 h-3 w-3" />
-                      Save Changes
-                    </>
-                  )}
-                </Button>
-                
+              <div className="flex justify-end">
                 <Button 
                   onClick={handleLogout} 
                   variant="ghost" 

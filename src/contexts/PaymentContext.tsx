@@ -13,10 +13,8 @@ interface PaymentContextType {
   subscriptionId: string | null;
   currentPeriodEnd: number | null;
   clientSecret: string | null;
-  stripePromise: Stripe | null;
-  createSetupIntent: () => Promise<{ clientSecret: string }>;
-  confirmSetupIntent: (paymentMethodId: string, name?: string, email?: string) => Promise<{ success: boolean; data: any }>;
-  createSubscription: (name: string, email?: string) => Promise<{ clientSecret: string; isSetupIntent?: boolean } | null>;
+  stripe: Stripe | null;
+  createSubscription: (name: string, email: string) => Promise<{ clientSecret: string; isSetupIntent?: boolean } | null>;
   createCheckoutSession: () => Promise<{ clientSecret: string }>;
   updateUserProfile: (name: string, email: string) => Promise<boolean>;
   refreshSubscriptionStatus: () => Promise<void>;
@@ -35,14 +33,13 @@ export const usePayment = () => {
 };
 
 export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, setAccount } = useAuth();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
   const [currentPeriodEnd, setCurrentPeriodEnd] = useState<number | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [stripePromise, setStripePromise] = useState<Stripe | null>(null);
-  const [customerId, setCustomerId] = useState<string | null>(null);
+  const [stripe, setStripe] = useState<Stripe | null>(null);
 
   // Initialize Stripe
   useEffect(() => {
@@ -68,7 +65,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         if (stripeInstance) {
           console.log('✅ Stripe initialized successfully');
-          setStripePromise(stripeInstance);
+          setStripe(stripeInstance);
         } else {
           console.error('❌ Stripe initialized but returned null instance');
         }
@@ -119,42 +116,8 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  // Create a setup intent
-  const createSetupIntent = async () => {
-    console.log('creating setup intent');
-    const response = await fetch(`${webhookServerUrl}/api/stripe/create-setup-intent`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    const data = await response.json();
-    console.log('data: ', data);
-    setClientSecret(data.clientSecret);
-    return { clientSecret: data.clientSecret };
-  };
-
-  const confirmSetupIntent = async (paymentMethodId: string, name?: string, email?: string) => {
-    try {
-      const response = await fetch(`${webhookServerUrl}/api/stripe/confirm-subscription`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentMethodId, name, email }),
-      });
-      const data = await response.json();
-      if (data.status === 'active') {
-        console.log('Subscription created:', data.subscriptionId);
-        return { success: true, data: data };
-      } else {
-        return { success: false, data: data.error };
-      }
-    } catch (err) {
-      return { success: false, data: err.message };
-    }
-  };
-
   // Create a subscription
-  const createSubscription = async (name?: string, email?: string) => {
+  const createSubscription = async (name: string, email: string) => {
     if (!user?.id) {
       toast.error('You must be logged in to subscribe');
       return null;
@@ -162,12 +125,9 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     setIsLoading(true);
     try {
-      // Use provided email if available, otherwise use the user's email from auth context (if available)
-      const customerEmail = email || user?.email || null;
-      const customerName = name || user?.name || null;
       console.log('Making subscription API request with:', {
-        customer_name: customerName,
-        customer_email: customerEmail,
+        customer_name: name,
+        customer_email: email,
         user_id: user.id,
       });
       
@@ -177,8 +137,8 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          customer_name: customerName,
-          customer_email: customerEmail,
+          customer_name: name,
+          customer_email: email,
           user_id: user.id,
         }),
       });
@@ -201,8 +161,9 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Set the client secret in the context state
       setClientSecret(data.clientSecret);
-      // also set the customer id in the context state
-      setCustomerId(data.customerId);
+      
+      // Also log the Stripe publishable key to make sure it matches
+      console.log('Using publishable key:', stripePublishableKey);
       
       return {
         clientSecret: data.clientSecret,
@@ -210,15 +171,14 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       };
     } catch (error: any) {
       console.error('Error creating subscription:', error);
-      // toast.error(error.message || 'Failed to create subscription');
+      toast.error(error.message || 'Failed to create subscription');
       return null;
     } finally {
       setIsLoading(false);
     }
   };
-  
 
-  // Create a checkout session - NOT USING THIS FOR NOW
+  // Create a checkout session
   const createCheckoutSession = async () => {
 
     setIsLoading(true);
@@ -275,17 +235,13 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   // Update user profile with name and email
-  const updateUserProfile = async (name?: string, email?: string) => {
+  const updateUserProfile = async (name: string, email: string) => {
     if (!user?.id) {
       toast.error('You must be logged in to update your profile');
       return false;
     }
 
     setIsLoading(true);
-
-    console.log('Setting user closed locally');
-    setAccount('closed');
-    // we can probably wait for the stripe webhook to change the server then tbh
     try {
       const response = await fetch(`${webhookServerUrl}/api/stripe/update-user`, { // this doesn't really need a dedicated webhook...
         method: 'POST',
@@ -296,7 +252,6 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
           user_id: user.id,
           name,
           email,
-          customer_id: customerId || null,
         }),
       });
 
@@ -375,9 +330,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     subscriptionId,
     currentPeriodEnd,
     clientSecret,
-    stripePromise,
-    createSetupIntent,
-    confirmSetupIntent,
+    stripe,
     createSubscription,
     createCheckoutSession,
     updateUserProfile,

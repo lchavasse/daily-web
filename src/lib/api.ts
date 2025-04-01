@@ -753,11 +753,7 @@ export async function updateUserProfile(
   }
 }
 
-export async function updateUser(userId: string, updates: {
-  email?: string;
-  phone?: string;
-  preferredVoice?: string;
-}): Promise<{ success: boolean, error?: string }> {
+export async function updateUser(userId: string, field: string, value: string): Promise<{ success: boolean, error?: string }> {
   try {
     const response = await fetch(`${BASE_URL}/dev/user/update`, {
       method: 'POST',
@@ -766,7 +762,8 @@ export async function updateUser(userId: string, updates: {
       },
       body: JSON.stringify({ 
         userId,
-        update: updates
+        field,
+        value
       }),
     });
 

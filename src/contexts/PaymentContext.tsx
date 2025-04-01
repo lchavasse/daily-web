@@ -32,7 +32,7 @@ export const usePayment = () => {
 };
 
 export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, setAccount } = useAuth();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
@@ -184,6 +184,9 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     setIsLoading(true);
+    console.log('changing user to closed locally')
+    setAccount('closed')
+    
     try {
       const response = await fetch(`${webhookServerUrl}/api/stripe/update-user`, { // this doesn't really need a dedicated webhook...
         method: 'POST',

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { usePayment } from '@/contexts/PaymentContext';
@@ -30,8 +30,7 @@ interface ExtendedUser {
 }
 
 const Settings = () => {
-  // Debug logging
-  console.log('Settings component rendering');
+  // Remove debug logging
   
   const { 
     isLoading, 
@@ -42,22 +41,16 @@ const Settings = () => {
     cancelSubscription 
   } = usePayment();
   
-  // Debug payment context values
-  console.log('Payment context values:', { 
-    isLoading, 
-    subscriptionStatus, 
-    subscriptionId, 
-    currentPeriodEnd 
-  });
+  // Remove debug payment context values
   
   const { user, logout } = useAuth();
-  // Debug auth context values
-  console.log('Auth context values:', { user });
+  // Remove debug auth context values
   
   const navigate = useNavigate();
   
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const hasLoadedSubscription = useRef(false);
 
   // Account settings state
   const [email, setEmail] = useState(user?.email || '');
@@ -106,9 +99,13 @@ const Settings = () => {
 
   // Refresh subscription status when component loads
   useEffect(() => {
-    console.log('Settings useEffect running - refreshing subscription');
+    if (!user?.id || hasLoadedSubscription.current) return;
+    
+    // Minimal logging
+    console.log('Loading subscription data');
     refreshSubscriptionStatus();
-  }, [user, refreshSubscriptionStatus]);
+    hasLoadedSubscription.current = true;
+  }, [user]);
 
   // Format date for display
   const formatDate = (timestamp: number | null) => {

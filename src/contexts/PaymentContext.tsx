@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
@@ -49,50 +49,23 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
 
       try {
-        console.log('Initializing Stripe on device:', 
-          window.innerWidth < 768 ? 'mobile' : 'desktop', 
-          'width:', window.innerWidth,
-          'using key:', stripePublishableKey.substring(0, 5) + '...' + stripePublishableKey.substring(stripePublishableKey.length - 4)
-        );
-        
-        // For mobile devices, add some extra options
-        const options = window.innerWidth < 768 ? {
-          locale: 'en' as const,
-        } : {};
-        
-        const stripeInstance = await loadStripe(stripePublishableKey, options);
-        
+        // Reduced logging
+        const stripeInstance = await loadStripe(stripePublishableKey);
         if (stripeInstance) {
-          console.log('✅ Stripe initialized successfully');
           setStripe(stripeInstance);
         } else {
-          console.error('❌ Stripe initialized but returned null instance');
+          console.error('Stripe initialized but returned null instance');
         }
       } catch (error) {
-        console.error('❌ Error initializing Stripe:', error);
+        console.error('Error initializing Stripe:', error);
       }
     };
 
     initializeStripe();
   }, []);
 
-  // Check subscription status when user changes
-  useEffect(() => {
-    if (user?.id) {
-      refreshSubscriptionStatus();
-    } else {
-      // Reset subscription data if no user
-      setSubscriptionStatus(null);
-      setSubscriptionId(null);
-      setCurrentPeriodEnd(null);
-      // Also clear client secret when user logs out
-      setClientSecret(null);
-      console.log('User logged out or changed, cleared subscription data and client secret');
-    }
-  }, [user]);
-
-  // Refresh subscription status
-  const refreshSubscriptionStatus = async () => {
+  // Refresh subscription status - wrapped in useCallback to maintain reference
+  const refreshSubscriptionStatus = useCallback(async () => {
     if (!user?.id) return;
 
     setIsLoading(true);
@@ -113,7 +86,20 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id]);
+
+  // Check subscription status when user changes
+  useEffect(() => {
+    if (user?.id) {
+      refreshSubscriptionStatus();
+    } else {
+      // Reset subscription data if no user
+      setSubscriptionStatus(null);
+      setSubscriptionId(null);
+      setCurrentPeriodEnd(null);
+      setClientSecret(null);
+    }
+  }, [user, refreshSubscriptionStatus]);
 
   // Create a subscription
   const createSubscription = async (name: string, email: string) => {

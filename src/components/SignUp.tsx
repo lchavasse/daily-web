@@ -118,7 +118,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
   const stripe = useStripe();
   const elements = useElements();
   const { isLoading, createSubscription, updateUserProfile } = usePayment();
-  const { user } = useAuth();
+  const { user, setAccount } = useAuth();
   const navigate = useNavigate();
   const [paymentRequest, setPaymentRequest] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
@@ -182,6 +182,8 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
           if (result?.clientSecret) {
             // Update user profile
             await updateUserProfile(e.payerName, e.payerEmail);
+
+            setAccount('closed');
             
             // Confirm the payment
             if (result.isSetupIntent) {
@@ -307,28 +309,6 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
       </CardHeader>
       
       <CardContent className="space-y-6 overflow-visible">
-        {/* Apple Pay / Google Pay */}
-        {paymentRequest && (
-          <div className="overflow-visible">
-            <PaymentRequestButtonElement
-              options={{
-                paymentRequest,
-                style: {
-                  paymentRequestButton: {
-                    type: 'buy',
-                    theme: 'light',
-                    height: '48px',
-                  },
-                },
-              }}
-            />
-            <div className="mt-4 mb-2 text-center">
-              <Separator>
-                <span className="px-4 text-sm text-muted-foreground">or pay with card</span>
-              </Separator>
-            </div>
-          </div>
-        )}
 
         {/* Card Payment Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 overflow-visible">

@@ -752,3 +752,28 @@ export async function updateUserProfile(
     return { success: false, error: 'Network error when updating user profile' };
   }
 }
+
+export async function updateUser(userId: string, updates: {
+  email?: string;
+  phone?: string;
+  preferredVoice?: string;
+}): Promise<{ success: boolean, error?: string }> {
+  try {
+    const response = await fetch(`${BASE_URL}/dev/user/update`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        userId,
+        update: updates
+      }),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return { success: false, error: 'Network error when updating user' };
+  }
+}

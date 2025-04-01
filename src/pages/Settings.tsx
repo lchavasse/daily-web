@@ -10,7 +10,24 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { LoaderCircle, CreditCard, ShieldAlert, Info, ArrowRightCircle } from 'lucide-react';
+import { LoaderCircle, CreditCard, ShieldAlert, Info, ArrowRightCircle, Save, Pencil } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { updateUser } from '@/lib/api';
+
+// Extend the User type to include preferredVoice
+interface ExtendedUser {
+  id: string;
+  email: string | null;
+  phone: string | null;
+  preferredVoice?: string;
+}
 
 const Settings = () => {
   // Debug logging
@@ -42,6 +59,51 @@ const Settings = () => {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Account settings state
+  const [email, setEmail] = useState(user?.email || '');
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
+  const [preferredVoice, setPreferredVoice] = useState((user as ExtendedUser)?.preferredVoice || 'default');
+
+  // Update local state when user data changes
+  useEffect(() => {
+    if (user) {
+      setEmail(user.email || '');
+      setPhone(user.phone || '');
+      setPreferredVoice((user as ExtendedUser)?.preferredVoice || 'default');
+    }
+  }, [user]);
+
+  // Handle save account settings
+  const handleSaveAccountSettings = async () => {
+    if (!user) return;
+    
+    setIsProcessing(true);
+    try {
+      const updates = {
+        email: email || undefined,
+        phone: phone || undefined,
+        preferredVoice
+      };
+      
+      const result = await updateUser(user.id, updates);
+      
+      if (result.success) {
+        toast.success('Account settings updated successfully');
+        setIsEditingEmail(false);
+        setIsEditingPhone(false);
+      } else {
+        toast.error(result.error || 'Failed to update account settings');
+      }
+    } catch (error) {
+      console.error('Error updating account settings:', error);
+      toast.error('Failed to update account settings');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   // Refresh subscription status when component loads
   useEffect(() => {
     console.log('Settings useEffect running - refreshing subscription');
@@ -68,6 +130,7 @@ const Settings = () => {
       setIsProcessing(false);
     }
   };
+
 
   // Get subscription status display
   const getStatusDisplay = () => {
@@ -109,12 +172,12 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
-      <div className="max-w-md mx-auto pt-8 pb-16">
+      <div className="w-full max-w-3xl pt-8 pb-16">
         <div className="mb-10 flex justify-center">
           <Logo />
         </div>
 
-        <div className="daily-card animate-fade-in space-y-8">
+        <div className="daily-card w-full animate-fade-in space-y-8">
           <h2 className="text-xl font-medium mb-4">Settings</h2>
           
           {/* Subscription Section */}
@@ -157,18 +220,18 @@ const Settings = () => {
                     <Button onClick={handleSubscribe} size="sm">
                       Subscribe
                     </Button>
-                  ) : subscriptionStatus === 'active' ? (
+                  ) : subscriptionStatus === 'active' || subscriptionStatus === 'trialing' ? (
                     <Button 
                       onClick={() => setCancelDialogOpen(true)} 
                       variant="outline" 
                       size="sm"
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      className="text-red-500 hover:text-red-700 hover:bg-red -50"
                     >
                       Cancel Subscription
                     </Button>
                   ) : (
-                    <Button onClick={handleSubscribe} size="sm">
-                      Manage Subscription
+                    <Button onClick={() => window.open('mailto:daily@nile-street.com', '_blank')} size="sm">
+                      contact support to manage subscription.
                     </Button>
                   )}
                 </div>
@@ -184,17 +247,88 @@ const Settings = () => {
             </div>
             
             <Card className="p-4 space-y-4">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-4">
+                {/* Email Field - Editable */}
                 <div className="text-sm text-muted-foreground">Email:</div>
-                <div className="text-sm">{user?.email || 'Not available'}</div>
+                <div className="flex items-center space-x-2">
+                  {isEditingEmail ? (
+                    <Input
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                  ) : (
+                    <div className="text-sm flex-grow">{email || 'Not available'}</div>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setIsEditingEmail(!isEditingEmail)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
                 
-                <div className="text-sm text-muted-foreground">User ID:</div>
-                <div className="text-sm font-mono text-xs">{user?.id || 'Not available'}</div>
+                {/* Phone Number Field */}
+                <div className="text-sm text-muted-foreground">Phone Number:</div>
+                <div className="flex items-center space-x-2">
+                  {isEditingPhone ? (
+                    <Input
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="h-8 text-sm"
+                      placeholder="Enter phone number"
+                    />
+                  ) : (
+                    <div className="text-sm flex-grow">{phone || 'Not available'}</div>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setIsEditingPhone(!isEditingPhone)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                
+                {/* Preferred Voice Dropdown */}
+                <div className="text-sm text-muted-foreground">Preferred Voice:</div>
+                <Select value={preferredVoice} onValueChange={setPreferredVoice}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">Default</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
               <Separator className="my-2" />
               
-              <div className="flex justify-end">
+              <div className="flex justify-between">
+                <Button 
+                  onClick={handleSaveAccountSettings} 
+                  variant="outline" 
+                  size="sm"
+                  disabled={isProcessing}
+                  className="text-indigo-500"
+                >
+                  {isProcessing ? (
+                    <>
+                      <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-1 h-3 w-3" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
+                
                 <Button 
                   onClick={handleLogout} 
                   variant="ghost" 

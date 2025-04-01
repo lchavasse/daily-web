@@ -318,10 +318,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
       
-      if (pendingData.account === 'none') {
+      if (pendingData.account === 'none' || pendingData.account === 'phone') {
         // Create or update user profile
         await notifyProfile(data.user.id, pendingData.phone, pendingData.account, data.user.email);
-        setAccount('open');
+        setAccount('open'); // all non-paid users are open
       }
       
       console.log('OTP verification successful');

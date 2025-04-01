@@ -161,9 +161,6 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Set the client secret in the context state
       setClientSecret(data.clientSecret);
       
-      // Also log the Stripe publishable key to make sure it matches
-      console.log('Using publishable key:', stripePublishableKey);
-      
       return {
         clientSecret: data.clientSecret,
       };

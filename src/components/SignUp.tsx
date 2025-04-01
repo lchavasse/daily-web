@@ -118,7 +118,7 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
   const stripe = useStripe();
   const elements = useElements();
   const { isLoading, createSubscription, updateUserProfile } = usePayment();
-  const { user, setAccount } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [paymentRequest, setPaymentRequest] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
@@ -182,8 +182,6 @@ const PaymentForm: React.FC<{ onBackClick?: () => void; isSetupIntent?: boolean 
           if (result?.clientSecret) {
             // Update user profile
             await updateUserProfile(e.payerName, e.payerEmail);
-
-            setAccount('closed');
             
             // Confirm the payment
             if (result.isSetupIntent) {

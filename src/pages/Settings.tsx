@@ -97,7 +97,7 @@ const Settings = () => {
 
   // Redirect to subscription page
   const handleSubscribe = () => {
-    navigate('/subscribe');
+    navigate('/welcome');
   };
 
   // Handle user logout
@@ -106,10 +106,11 @@ const Settings = () => {
     navigate('/');
   };
 
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
       <div className="max-w-md mx-auto pt-8 pb-16">
-        <div className="mb-10">
+        <div className="mb-10 flex justify-center">
           <Logo />
         </div>
 
@@ -223,7 +224,7 @@ const Settings = () => {
                   variant="link" 
                   size="sm"
                   className="flex items-center text-indigo-500"
-                  onClick={() => window.open('mailto:support@daily.app', '_blank')}
+                  onClick={() => window.open('mailto:daily@nile-street.com', '_blank')}
                 >
                   <span>Contact Support</span>
                   <ArrowRightCircle className="ml-1 h-3 w-3" />

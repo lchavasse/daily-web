@@ -66,7 +66,7 @@ const DetailsForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
   };
 
   return (
-    <Card className="w-full daily-card-contrast relative max-h-[90vh] flex flex-col">
+    <Card className="w-full daily-card-contrast relative max-h-[90vh] overflow-auto">
       {/* Back button at top right */}
       {onBackClick && (
         <button 
@@ -78,15 +78,14 @@ const DetailsForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
         </button>
       )}
       
-      <CardHeader className="flex-shrink-0">
+      <CardHeader>
         <CardTitle>Subscribe to daily.</CardTitle>
         <CardDescription>
           Get unlimited access to daily. with our monthly subscription.
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="space-y-4 pt-4 overflow-auto">
-        
+      <CardContent className="space-y-4 pt-4">
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4 mt-0">
             <div className="space-y-2">
@@ -151,7 +150,7 @@ const SignUpForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) => 
   };
   
   return (
-    <Card className="w-full daily-card-contrast relative max-h-[90vh] flex flex-col">
+    <Card className="w-full daily-card-contrast relative max-h-[90vh] overflow-auto">
       {/* Back button at top right */}
       {onBackClick && (
         <button 
@@ -163,7 +162,7 @@ const SignUpForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) => 
         </button>
       )}
       
-      <CardHeader className="flex-shrink-0">
+      <CardHeader>
         <CardTitle>Subscribe to Daily</CardTitle>
         <CardDescription className="flex justify-between items-center">
           <span>Complete your payment to subscribe to daily.</span>
@@ -181,9 +180,7 @@ const SignUpForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) => 
       </CardHeader>
       
       {clientSecret ? (
-        <div className="flex-grow overflow-auto">
-          <StripePaymentForm clientSecret={clientSecret} />
-        </div>
+        <StripePaymentForm clientSecret={clientSecret} />
       ) : (
         <CardContent className="space-y-4 pt-4">
           <div className="p-4 text-center">
@@ -282,8 +279,8 @@ const StripePaymentForm: React.FC<{ clientSecret: string }> = ({ clientSecret })
   };
   
   return (
-    <form onSubmit={handlePaymentSubmit} className="flex flex-col h-full">
-      <CardContent className="space-y-4 pt-4 overflow-y-auto">
+    <form onSubmit={handlePaymentSubmit}>
+      <CardContent className="space-y-4 pt-4">
         <div className="mb-4">
           <h3 className="font-medium mb-1">Subscription Details</h3>
           <p className="text-sm text-muted-foreground">Monthly subscription - £5/month</p>
@@ -318,7 +315,7 @@ const StripePaymentForm: React.FC<{ clientSecret: string }> = ({ clientSecret })
         </div>
       </CardContent>
       
-      <CardFooter className="flex justify-end mt-auto flex-shrink-0">
+      <CardFooter className="flex justify-end">
         <Button type="submit" disabled={loading || !stripe || !elements || !!stripeError}>
           {loading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
           Pay Now

@@ -66,7 +66,7 @@ const DetailsForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
   };
 
   return (
-    <Card className="w-full daily-card-contrast relative max-h-[90vh] overflow-auto">
+    <Card className="w-full daily-card-contrast relative max-h-[90vh] md:max-h-[90vh] overflow-auto">
       {/* Back button at top right */}
       {onBackClick && (
         <button 
@@ -150,7 +150,7 @@ const SignUpForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) => 
   };
   
   return (
-    <Card className="w-full daily-card-contrast relative max-h-[90vh] overflow-auto">
+    <Card className="w-full daily-card-contrast relative max-h-[100vh] md:max-h-[90vh] overflow-auto">
       {/* Back button at top right */}
       {onBackClick && (
         <button 
@@ -279,7 +279,7 @@ const StripePaymentForm: React.FC<{ clientSecret: string }> = ({ clientSecret })
   };
   
   return (
-    <form onSubmit={handlePaymentSubmit}>
+    <form onSubmit={handlePaymentSubmit} className="pb-8 md:pb-0">
       <CardContent className="space-y-4 pt-4">
         <div className="mb-4">
           <h3 className="font-medium mb-1">Subscription Details</h3>

@@ -18,6 +18,17 @@ const Dashboard: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('Dashboard page - Auth state:', { 
+      user: user ? 'logged in' : 'not logged in', 
+      userId, 
+      account, 
+      isLoading,
+      subscriptionStatus
+    });
+  }, [user, userId, account, isLoading, subscriptionStatus]);
+
   useEffect(() => {
     if (userId) {
       const loadProfile = async () => {
@@ -96,7 +107,7 @@ const Dashboard: React.FC = () => {
         {/* Animated header section - Different layouts for mobile and desktop */}
         {isMobile ? (
           // Mobile layout - Logo stacked above call request
-          <div className="mb-6 flex flex-col items-center space-y-4 ">
+          <div className="mb-6 flex flex-col items-center space-y-4 w-full px-2">
             {/* Logo centered at the top */}
             <div className="flex justify-center animate-scale-in">
               <Logo />
@@ -104,7 +115,7 @@ const Dashboard: React.FC = () => {
             
             {/* Call request below logo */}
             <div 
-              className={`transition-all duration-700 ease-in-out transform ${
+              className={`transition-all duration-700 ease-in-out transform w-full max-w-[90vw] ${
                 logoAnimationComplete 
                   ? 'opacity-100 translate-y-0' 
                   : 'opacity-0 translate-y-4'

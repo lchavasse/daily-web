@@ -81,6 +81,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('Found existing session:', session);
           const mappedUser = mapSupabaseUser(session.user);
           setUser(mappedUser);
+          
+          // Also retrieve the account status for this user
+          try {
+            // If we have a phone number from the session, use it to check account status
+            if (session.user.phone) {
+              console.log('Checking account status for existing session...');
+              const { status } = await checkForProfile(session.user.phone);
+              console.log('Retrieved account status for existing session:', status);
+              setAccount(status);
+            } else {
+              // Default to 'open' if we can't determine account status
+              console.log('No phone number in session, defaulting to open account');
+              setAccount('open');
+            }
+          } catch (accountError) {
+            console.error('Error retrieving account status:', accountError);
+            // Default to 'open' if there's an error
+            setAccount('open');
+          }
         } else {
           console.log('No existing session found');
         }
@@ -100,6 +119,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         const mappedUser = session ? mapSupabaseUser(session.user) : null;
         setUser(mappedUser);
+        
+        // Also update the account status when auth state changes
+        if (session && session.user.phone) {
+          try {
+            console.log('Checking account status on auth state change...');
+            const { status } = await checkForProfile(session.user.phone);
+            console.log('Retrieved account status on auth state change:', status);
+            setAccount(status);
+          } catch (accountError) {
+            console.error('Error retrieving account status on auth state change:', accountError);
+            // Default to 'open' if there's an error
+            setAccount('open');
+          }
+        } else if (!session) {
+          // Reset account status if no session
+          setAccount(null);
+        }
+        
         setIsLoading(false);
       }
     );
@@ -338,7 +375,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       console.log('OTP verification successful');
-      toast.success('OTP verified successfully');
+
       
       // Determine if this is a signup (account was 'none') or login - NOT SURE WHAT THIS IS DOING
       const isSignup = pendingData.account === 'none';
@@ -398,7 +435,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clear pending state
       setPendingAction(null);
       setPendingData(null);
-      toast.success('Logged out successfully');
+
     } catch (error: any) {
       console.error('Logout error:', error);
       toast.error(error.message || 'Logout failed');

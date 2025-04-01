@@ -53,7 +53,7 @@ const RequestCall: React.FC<RequestCallProps> = ({
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+      setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 640);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -184,15 +184,16 @@ const RequestCall: React.FC<RequestCallProps> = ({
       )}
 
       <button
-        className={`transition-all duration-300 hover:shadow-md transform hover:-translate-y-1 flex items-center ${
+        className={`transition-all duration-300 hover:shadow-md transform hover:-translate-y-1 flex items-center flex-wrap ${
           isAnimationComplete ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'
         }`}
         style={{
           backgroundColor: '#EBCEB7',
           borderRadius: '2rem',
-          padding: '0.75rem 1.25rem',
-          width: 'auto',
-          minWidth: '220px',
+          padding: isMobile ? '0.75rem 1rem' : '0.75rem 1.25rem',
+          width: isMobile ? 'auto' : 'auto',
+          minWidth: isMobile ? 'auto' : '220px',
+          maxWidth: isMobile ? '90vw' : 'none',
           transitionDelay: '200ms',
         }}
         onClick={toggleMenu}
@@ -200,7 +201,7 @@ const RequestCall: React.FC<RequestCallProps> = ({
         ref={buttonRef}
       >
         <h2
-          className="text-lg font-medium font-[Afacad] mr-3 flex-grow whitespace-nowrap"
+          className="text-lg font-medium font-[Afacad] mr-3 flex-grow whitespace-normal md:whitespace-nowrap break-words"
           style={{ fontStyle: 'italic' }}
         >
           {displayText}

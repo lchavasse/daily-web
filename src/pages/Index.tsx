@@ -11,6 +11,11 @@ const Index: React.FC = () => {
   const { user, account, pendingAction } = useAuth();
   const [displayText, setDisplayText] = useState('');
 
+  // Debug logging
+  useEffect(() => {
+    console.log('Index page - Auth state:', { user: user ? 'logged in' : 'not logged in', account, pendingAction });
+  }, [user, account, pendingAction]);
+
   // Typing animation effect
   useEffect(() => {
     const text = 'daily.';

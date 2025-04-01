@@ -210,23 +210,34 @@
   /* Fix for mobile screens */
   @media (max-width: 640px) {
     .daily-card-contrast {
-      max-height: 80vh;
+      max-height: 100vh;
       padding: 1rem;
+      padding-bottom: 6rem;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     
     .payment-element-container {
-      min-height: 250px;
+      min-height: 300px;
     }
     
     /* Ensure Stripe iframe content is fully visible */
     .__PrivateStripeElement iframe {
       height: auto !important;
-      min-height: 250px;
+      min-height: 300px;
     }
     
     /* Fix for Stripe form overflow on small screens */
     form .space-y-4 {
-      margin-bottom: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    /* Fix for RequestCall component on mobile */
+    button h2.flex-grow {
+      font-size: 1rem;
+      line-height: 1.3;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
   }
 }

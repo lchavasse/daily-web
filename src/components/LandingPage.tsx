@@ -113,7 +113,6 @@ const LandingPage: React.FC = () => {
               <li className="flex items-start gap-2">
                 <span className="text-daily-button mt-1.5">•</span>
                 <div>
-                  <div><strong>Launching 01.04.2025</strong></div>
                   <div>a web dashboard to track goals</div>
                 </div>
               </li>
@@ -123,7 +122,7 @@ const LandingPage: React.FC = () => {
             <div className="relative pt-2">
               <div className="space-y-2">
                 <p className="text-md italic text-gray-700">
-                  For less than a fancy coffee a week, gain a decision partner that never sleeps, never judges, and always has your back.
+                  For less than a pint a month, gain a decision partner that never sleeps, never judges, and always has your back.
                 </p>
                 <p className="text-lg font-semibold">Be an early adopter - £5/month - 7 day free trial</p>
                 <p className="text-sm text-gray-500 italic">

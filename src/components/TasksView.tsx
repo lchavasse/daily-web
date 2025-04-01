@@ -428,16 +428,10 @@ const TasksView: React.FC = () => {
           </form>
         </div>
       )}
-      
-      {/* Active Tasks */}
-      {activeTasks.length === 0 && completedTasks.length === 0 ? (
-        <div className="text-center py-6 bg-white/50 rounded-lg border border-gray-100">
-          <p className="text-gray-500">No tasks found. Create your first task!</p>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-3">
-          <div className="flex items-center justify-between">
+
+        <div className="space-y-3">
+
+        <div className="flex items-center justify-between">
         <h2 className="text-lg font-medium">{activeTasks.length > 0 ? 'Active Tasks' : ''}</h2>
         <button 
           onClick={() => setShowNewTaskForm(!showNewTaskForm)}
@@ -447,6 +441,15 @@ const TasksView: React.FC = () => {
           {showNewTaskForm ? 'Cancel' : 'New Task'}
         </button>
       </div>
+      
+      {/* Active Tasks */}
+      {activeTasks.length === 0 && completedTasks.length === 0 ? (
+        <div className="text-center py-6 bg-white/50 rounded-lg border border-gray-100">
+          <p className="text-gray-500">No tasks found. Create your first task!</p>
+        </div>
+      ) : (
+        <>
+          
             {activeTasks.map((task) => (
               <div 
                 key={task.id} 
@@ -662,7 +665,7 @@ const TasksView: React.FC = () => {
                 )}
               </div>
             ))}
-          </div>
+
           
           {/* Completed Tasks */}
           {completedTasks.length > 0 && (
@@ -749,7 +752,9 @@ const TasksView: React.FC = () => {
             </div>
           )}
         </>
+        
       )}
+    </div>
     </div>
   );
 };

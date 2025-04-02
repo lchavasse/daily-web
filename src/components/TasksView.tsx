@@ -453,7 +453,7 @@ const TasksView: React.FC = () => {
             {activeTasks.map((task) => (
               <div 
                 key={task.id} 
-                className="daily-card-contrast transition-all duration-300 hover:bg-[#EBCEB7] group"
+                className="daily-card-contrast md:p-6 p-3 transition-all duration-300 hover:bg-[#EBCEB7] group"
               >
                 <div 
                   className="flex items-start cursor-pointer"

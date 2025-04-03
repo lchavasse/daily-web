@@ -85,7 +85,7 @@ const LandingPage: React.FC = () => {
     return (
       <>
         {/* Info content */}
-        <div className="daily-card-contrast mx-0 mt-1 border-t border-gray-400/20">
+        <div className="daily-card-contrast p-6 mx-0 mt-1 border-t border-gray-400/20">
           {/* Features section */}
           <div 
             className={`space-y-4 pb-1 ${isMobile ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
@@ -107,13 +107,13 @@ const LandingPage: React.FC = () => {
               <li className="flex items-start gap-2">
                 <span className="text-daily-button mt-1.5">•</span>
                 <div>
-                  secured data with sms authentication on every call
+                  secured data with <strong>sms authentication</strong> on every call
                 </div>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-daily-button mt-1.5">•</span>
                 <div>
-                  <div>a web dashboard to track goals</div>
+                  <div>a <strong>web dashboard</strong> to track goals</div>
                 </div>
               </li>
             </ul>
@@ -190,7 +190,7 @@ const LandingPage: React.FC = () => {
               </div>
 
               {/* Tagline below the title on mobile */}
-              <div className="mt-2 text-xl">
+              <div className="md:mt-2 mt-0 text-xl">
                 <p className="leading-tight italic">daily. is your 24/7 <span className="font-bold">coach</span> to keep</p>
                 <p className="leading-tight italic">you accountable and on track.</p>
               </div>

@@ -66,7 +66,7 @@ const DetailsForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) =>
   };
 
   return (
-    <Card className="w-full daily-card-contrast relative max-h-[90vh] md:max-h-[90vh] overflow-auto">
+    <Card className="w-full daily-card-contrast p-4 md:pb-4 pb-0 relative max-h-[90vh] md:max-h-[90vh] overflow-auto">
       {/* Back button at top right */}
       {onBackClick && (
         <button 
@@ -150,7 +150,7 @@ const SignUpForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) => 
   };
   
   return (
-    <Card className="w-full daily-card-contrast relative max-h-[100vh] md:max-h-[90vh] overflow-auto">
+    <Card className="w-full daily-card-contrast p-4 md:pb-4 pb-0 relative overflow-scroll">
       {/* Back button at top right */}
       {onBackClick && (
         <button 

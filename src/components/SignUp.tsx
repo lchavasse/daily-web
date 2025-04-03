@@ -150,7 +150,7 @@ const SignUpForm: React.FC<{ onBackClick?: () => void }> = ({ onBackClick }) => 
   };
   
   return (
-    <Card className="w-full daily-card-contrast p-4 md:pb-4 pb-0 relative overflow-scroll">
+    <Card className="w-full daily-card-contrast p-4 md:pb-4 pb-0 relative max-h-full overflow-visible">
       {/* Back button at top right */}
       {onBackClick && (
         <button 
@@ -279,16 +279,16 @@ const StripePaymentForm: React.FC<{ clientSecret: string }> = ({ clientSecret })
   };
   
   return (
-    <form onSubmit={handlePaymentSubmit} className="pb-8 md:pb-0">
-      <CardContent className="space-y-4 pt-4">
+    <form onSubmit={handlePaymentSubmit} className="pb-8 md:pb-0 w-full">
+      <CardContent className="space-y-4 pt-4 overflow-visible">
         <div className="mb-4">
           <h3 className="font-medium mb-1">Subscription Details</h3>
-          <p className="text-sm text-muted-foreground">Monthly subscription - £5/month</p>
+          <p className="text-sm text-muted-foreground">Monthly subscription - £5/month - 7 day free trial</p>
         </div>
         
         <Separator className="my-4" />
         
-        <div className="space-y-4">
+        <div className="space-y-4 w-full">
           {stripeError ? (
             <div className="p-4 bg-red-50 border border-red-200 rounded text-red-600">
               <h4 className="font-medium mb-2">Payment Error</h4>

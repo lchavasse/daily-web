@@ -1,10 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Logo from '@/components/Logo';
 import NavigationMenu from '@/components/NavigationMenu';
 import SocialLinks from '@/components/SocialLinks';
 
 const Info: React.FC = () => {
   const [showRoadmap, setShowRoadmap] = useState(false);
+  const location = useLocation();
+
+  // Check for the roadmap parameter when component mounts
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get('view') === 'roadmap') {
+      setShowRoadmap(true);
+    }
+  }, [location]);
 
   const toggleRoadmap = () => {
     setShowRoadmap(!showRoadmap);

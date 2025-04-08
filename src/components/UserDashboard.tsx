@@ -47,7 +47,7 @@ const UserDashboard: React.FC = () => {
       <div className="daily-card w-full mx-8">
       <h2 className="text-md font-medium mb-0">Hi {user?.name || 'there'}, how have you been..?</h2>
       <div className="text-sm text-gray-400 mb-4">
-        <h3 className="italic text-sm text-[#502220]">this dashboard is being rapidly developed. Please see our <a className="underline" href="/about" target="_blank" rel="noopener noreferrer">roadmap</a> for details...</h3>
+        <h3 className="italic text-sm text-[#502220]">this dashboard is being rapidly developed. Please see our <a className="underline" href="/info?view=roadmap" target="_blank" rel="noopener noreferrer">roadmap</a> for details...</h3>
       </div>
         <div className="flex rounded-lg overflow-hidden mb-6">
           <button

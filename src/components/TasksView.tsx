@@ -578,14 +578,40 @@ const TasksView: React.FC = () => {
                           
                           {/* Only show description if task is expanded or has description */}
                           {(expandedTask === task.id ) && (
-                            <div className="group mt-2 flex flex-row items-center">
-                              <div className="text-sm text-gray-700">
+                            <div className="group mt-2 flex flex-col items-left">
+                              <div className="text-sm text-gray-700 italic">
                                 {task.description ? 
                                   <p>{task.description}</p> : 
                                   <p className="text-gray-400 italic">No description</p>
                                 }
                               </div>
-                              
+                              {/* add updates here with date and text */}
+                              {task.updates && (
+                                <div className="text-sm text-gray-700 mt-2">
+                                  <p className="font-medium mb-1"><strong>Updates:</strong></p>
+                                  {typeof task.updates === 'object' && !Array.isArray(task.updates) ? (
+                                    // Handle object format: { timestamp: text }
+                                    Object.entries(task.updates).map(([timestamp, text]) => {
+                                      const date = new Date(timestamp);
+                                      const formattedDate = date.toLocaleDateString('en-GB', { 
+                                        day: 'numeric', 
+                                        month: 'short',
+                                        year: 'numeric'
+                                      });
+                                      return (
+                                        <p key={timestamp} className="mb-1">
+                                          <strong>{formattedDate}:</strong> {text as string}
+                                        </p>
+                                      );
+                                    })
+                                  ) : (
+                                    // Handle array format for backward compatibility
+                                    Array.isArray(task.updates) && task.updates.map((update: { id: string; date: string; text: string }) => (
+                                      <p key={update.id} className="mb-1">{update.date} - {update.text}</p>
+                                    ))
+                                  )}
+                                </div>
+                              )}
                             </div>
                           )}
                           

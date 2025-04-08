@@ -70,9 +70,9 @@ const PrivacyPolicy: React.FC = () => {
 
           <h3 className="text-2xl font-semibold mt-8">b) User Content</h3>
           <ul className="list-disc pl-6 space-y-2">
-            <li><strong>Journal Entries (App)</strong>: Your in-app journal entries are encrypted on your device using a unique key, ensuring they cannot be accessed without the device or key.</li>
+            <li><strong>Journal Entries</strong>: Journal entries are generated automatically by the voice assistant. You can also write them on the web dashboard or mobile app. The mobile app offers optional end to end encryption for your journal entries. This means that the voice assistant cannot access them.</li>
             <li><strong>Profile Information</strong>: Your profile details, tasks, projects, and reminders are stored and encrypted using industry-standard security (AES-256).</li>
-            <li><strong>Voice Assistant Interactions</strong>: Conversations with the AI voice assistant are processed but not permanently stored.</li>
+            <li><strong>Voice Assistant Interactions</strong>: Conversations with the AI voice assistant are processed and summarized for future context. No voice data is stored.</li>
           </ul>
 
           <h3 className="text-2xl font-semibold mt-8">c) Voice Data</h3>
@@ -94,7 +94,7 @@ const PrivacyPolicy: React.FC = () => {
 
           <h2 className="text-3xl font-semibold mt-10">2. How We Use Your Data</h2>
           <ul className="list-disc pl-6 space-y-2">
-            <li>To provide and enhance the features of Daily, including the voice assistant.</li>
+            <li>To provide and enhance the features of daily, including the voice assistant.</li>
             <li>To authenticate and secure your account.</li>
             <li>To deliver AI services and transcriptions for the voice assistant and other features.</li>
             <li>To improve functionality and user experience using anonymous usage data.</li>
@@ -104,7 +104,7 @@ const PrivacyPolicy: React.FC = () => {
           <h2 className="text-3xl font-semibold mt-10">3. Legal Basis for Processing</h2>
           <ul className="list-disc pl-6 space-y-2">
             <li><strong>Consent</strong>: When you enable optional AI services, use voice features, or share data with us voluntarily.</li>
-            <li><strong>Contract</strong>: To provide core functionalities of Daily (e.g., authentication and storage of journal entries, tasks, and reminders).</li>
+            <li><strong>Contract</strong>: To provide core functionalities of daily (e.g. authentication and storage of journal entries, tasks, and reminders).</li>
             <li><strong>Legitimate Interests</strong>: To improve our app and user experience, where such interests are not overridden by your rights.</li>
           </ul>
 
@@ -135,7 +135,7 @@ const PrivacyPolicy: React.FC = () => {
           <h2 className="text-3xl font-semibold mt-10">7. Data Security</h2>
           <p className="text-lg leading-relaxed">We use encryption and other security measures to protect your data:</p>
           <ul className="list-disc pl-6 space-y-2">
-            <li>Journal entries in the app are encrypted on your device by default.</li>
+            <li>Journal entries in the app are end to end encrypted by default, using a unique key.</li>
             <li>Profile information, tasks, projects, and reminders are secured with industry-standard encryption (AES-256).</li>
             <li>Data sent to third-party partners for AI or voice features is transmitted securely and is not retained after processing.</li>
             <li>Anonymous usage data is aggregated and stored securely.</li>

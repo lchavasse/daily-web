@@ -26,7 +26,7 @@ const OnePager: React.FC = () => {
   return (
     <div className="min-h-screen p-6 relative">
       {/* Content Card */}
-      <div className="daily-card animate-fade-in mb-16 mx-auto max-w-6xl">
+      <div className="daily-card animate-fade-in mb-16 mx-auto max-w-4xl">
         {/* Header with back button and logo */}
         <div className="relative flex items-center justify-center mb-12 lm">
           <button
@@ -56,30 +56,30 @@ const OnePager: React.FC = () => {
           <ReactMarkdown
             components={{
               h1: ({ children }) => (
-                <h1 className="text-4xl font-bold text-[#200503] mb-8 w-full break-words text-center">
+                <h1 className="text-3xl font-bold text-[#200503] mb-8 w-full break-words text-center">
                   {children}
                 </h1>
               ),
               h2: ({ children }) => (
                 <div className="flex items-center space-x-3 mt-16 mb-2">
                   <div className="w-8 h-1 bg-[#200503] rounded-full"></div>
-                  <h2 className="text-2xl font-semibold text-[#200503] m-0">
+                  <h2 className="text-xl font-semibold text-[#200503] m-0">
                     {children}
                   </h2>
                 </div>
               ),
               h3: ({ children }) => (
-                <h3 className="text-2xl font-semibold mt-8 text-[#200503]">
+                <h3 className="text-xl font-semibold mt-8 text-[#200503]">
                   {children}
                 </h3>
               ),
               h4: ({ children }) => (
-                <h4 className="text-xl font-semibold !mt-1 text-[#200503] not-prose">
+                <h4 className="text-lg font-semibold !mt-1 text-[#200503] not-prose">
                   {children}
                 </h4>
               ),
               p: ({ children }) => (
-                <p className="text-lg leading-relaxed text-black !mt-0 !mb-4 not-prose">
+                <p className="text-md leading-relaxed text-black !mt-0 !mb-4 not-prose">
                   {children}
                 </p>
               ),

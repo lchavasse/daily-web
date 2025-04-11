@@ -16,6 +16,7 @@ import OpenPage from "./pages/OpenPage";
 import Settings from "./pages/Settings";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import { useAuth } from "@/contexts/AuthContext";
+import OnePager from "./pages/OnePager";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const MainRoutes = () => (
         <Route path="/test" element={<TestPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/one-pager" element={<OnePager />} />
         {/* Protected routes */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
@@ -62,6 +64,7 @@ const App = () => (
         <Routes>
           {/* Public route for privacy policy */}
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/one-pager" element={<OnePager />} />
           {/* All other routes go through MainRoutes */}
           <Route path="/*" element={<MainRoutes />} />
         </Routes>

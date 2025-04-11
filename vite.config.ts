@@ -21,6 +21,6 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    outDir: 'dist', // Should match Vercel’s expected output
+    outDir: 'dist', // Should match Vercel's expected output
   },
 }));

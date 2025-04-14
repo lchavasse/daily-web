@@ -40,7 +40,7 @@ const Info: React.FC = () => {
               <h2 className="text-xl font-medium mb-4">Our Roadmap</h2>
               <div className="space-y-6 text-sm">
                 <div>
-                  <h3 className="font-medium mb-2">→ 07.04</h3>
+                  <h3 className="font-medium mb-2">→ 14.04</h3>
                   <ul className="list-disc pl-5 text-gray-700">
                     <li>daily. will proactively reschedule calls to keep you on track</li>
                     <li>daily. will respond to sms to add context to your calls</li>
@@ -50,7 +50,7 @@ const Info: React.FC = () => {
                 </div>
                 
                 <div>
-                  <h3 className="font-medium mb-2">→ 14.04</h3>
+                  <h3 className="font-medium mb-2">→ 28.04</h3>
                   <ul className="list-disc pl-5 text-gray-700">
                     <li>improved separation of context for conversations
                       <ul className="pl-5 italic text-gray-600">
@@ -71,14 +71,14 @@ const Info: React.FC = () => {
                 </div>
                 
                 <div>
-                  <h3 className="font-medium mb-2">→ 28.04</h3>
+                  <h3 className="font-medium mb-2">→ 12.05</h3>
                   <ul className="list-disc pl-5 text-gray-700">
                     <li>journal restructure: add items to future days - get prompts from daily. - improve automation</li>
                   </ul>
                 </div>
                 
                 <div>
-                  <h3 className="font-medium mb-2">→ 01.06</h3>
+                  <h3 className="font-medium mb-2">→ 01.07</h3>
                   <ul className="list-disc pl-5 text-gray-700">
                     <li>Mobile app to handle calls, messages and reminders directly</li>
                   </ul>

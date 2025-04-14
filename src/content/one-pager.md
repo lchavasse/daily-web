@@ -31,11 +31,12 @@ At a fraction of the cost, we can give visionaries the structure and support the
 - [**Epiphany**](https://epiphanyvoice.io/) (#1 product hunt) shows desire to take notes in all scenarios, but moves context elsewhere
 
 ## Competition
-- **Journaling apps:** Too many features yet missing consistent habit-building prompts
+- **Document Based Tools (Notion, Obsidian):** Serve as knowledge base, but not habit building or reactive.
+- **Journaling apps:** Too many features yet missing consistent habit-building prompts - don't provide immediate value
 - **Voice assistants (Siri/Gemini/Alexa):** Largely reactive and lack context retention
 - **AI therapy/coaching:** Sporadic guidance without sustained support
 - **AI wearables (e.g. [Bee](http://bee.computer/), [Omi](https://www.omi.me/), [Gobi](https://joingobi.com/) etc.):** Innovative but conflict with the growing desire for offline spaces - little value from reflective process
-- **Specialised models ([Sesame](https://www.sesame.com/), Pi ([Inflection AI](https://inflection.ai/))):** exciting space - can use their API access
+- **Specialised models ([Sesame](https://www.sesame.com/), Pi ([Inflection AI](https://inflection.ai/))):** exciting space - can use their APIs
 
 ### Our Edge
 - Habit building interactions
@@ -63,7 +64,7 @@ At a fraction of the cost, we can give visionaries the structure and support the
 
 #### 1 Sep - 1k DAUs
 **Features:** full agentic workflows outside of calls\
-**Strategy:** transition to content based marketing to scale (CAC for pro user ~£10 - including trial)\
+**Strategy:** transition to content based marketing to scale \
 **Hire:** engineer 2, founder's associate
 
 #### 1 March '26 - 2.5k DAUs
@@ -73,5 +74,5 @@ At a fraction of the cost, we can give visionaries the structure and support the
 
 #### 1 Sep '26 - 5k DAUs
 **Features:** Multimodal "life" interactions\
-**Strategy:** hold greatest context of consumers lives - build emotional\
+**Strategy:** hold greatest context of consumers lives - build emotional connections\
 **Hire:** gtm, product engineer 
